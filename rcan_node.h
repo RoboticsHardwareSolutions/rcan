@@ -1,4 +1,4 @@
-//#ifndef __RCAN_NODE_H
+ //#ifndef __RCAN_NODE_H
 //#define __RCAN_NODE_H
 //
 //enum can_node_error {

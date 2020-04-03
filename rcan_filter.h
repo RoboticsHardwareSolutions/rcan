@@ -3,38 +3,56 @@
 
 #include "stdbool.h"
 #include "stdint.h"
-
-
 /**
- * This is defined by the CAN hardware.
- * Devices with only one CAN interface have 14 filters
- */
-#define RCAN_NUM_ACCEPTANCE_FILTERS                            14U
-
-/// Related to rcan frame
-
-#define CANARD_CAN_EXT_ID_MASK                      0x1FFFFFFFU
-#define CANARD_CAN_STD_ID_MASK                      0x000007FFU
-#define CANARD_CAN_FRAME_EFF                        (1UL << 31U)         ///< Extended frame format
-#define CANARD_CAN_FRAME_RTR                        (1UL << 30U)         ///< Remote transmission (not used by UAVCAN)
-#define CANARD_CAN_FRAME_ERR                        (1UL << 29U)
-
-// Rx FIFO mailbox identifier register
-
-#define CANARD_STM32_CAN_RIR_RTR               (1U << 1U)  // Bit 1: Remote Transmission Request
-#define CANARD_STM32_CAN_RIR_IDE               (1U << 2U)  // Bit 2: Identifier Extension
-#define CANARD_STM32_CAN_RIR_EXID_SHIFT        (3U)        // Bit 3-31: Extended Identifier
-#define CANARD_STM32_CAN_RIR_EXID_MASK         (0x1FFFFFFFU << CANARD_STM32_CAN_RIR_EXID_SHIFT)
-#define CANARD_STM32_CAN_RIR_STID_SHIFT        (21U)       // Bits 21-31: Standard Identifier
-#define CANARD_STM32_CAN_RIR_STID_MASK         (0x07FFU << CANARD_STM32_CAN_RIR_STID_SHIFT)
+     * The logic of the hardware acceptance filters can be described as follows:
+     *
+     *  accepted -> if(received_id & filter_mask ==  filter_id )
+     *
+     * Where:
+     *  - accepted      - if true, the frame will be accepted by the filter.
+     *  - received_id   - the CAN ID of the received frame, either 11-bit or 29-bit, with extension bits
+     *                    marking extended frames, error frames, etc.
+     *  - filter_id     - the value of the filter ID register.
+     *  - filter_mask   - the value of the filter mask register.
+     *
+     * There are special bits that are not members of the CAN ID field:
+     *  - EFF - set for extended frames (29-bit), cleared for standard frames (11-bit)
+     *  - RTR - like above, indicates Remote Transmission Request frames.
+     *
+     * The following truth table summarizes the logic (where: FM - filter mask, FID - filter ID, RID - received
+     * frame ID, A - true if accepted, X - any state):
+     *
+     *  FM  FID RID A
+     *  0   X   X   1
+     *  1   0   0   1
+     *  1   1   0   0
+     *  1   0   1   0
+     *  1   1   1   1
+     *
+     * One would expect that for the purposes of hardware filtering, the special bits should be treated
+     * in the same way as the real ID bits. However, this is not the case with bxCAN. The following truth
+     * table has been determined empirically (this behavior was not documented as of 2017):
+     *
+     *  FM  FID RID A
+     *  0   0   0   1
+     *  0   0   1   0       <-- frame rejected!
+     *  0   1   X   1
+     *  1   0   0   1
+     *  1   1   0   0
+     *  1   0   1   0
+     *  1   1   1   1
+     */
 
 
 typedef struct {
     uint32_t id;
     uint32_t mask;
-} CanardSTM32AcceptanceFilterConfiguration;
+} rcan_mask_filter_config;
 
+bool rcan_filter_calculate_ext(const uint32_t *source_sequence, uint32_t size,
+                               rcan_mask_filter_config *const filter_config);
 
-bool rcan_config_bitmask_filter(CanardSTM32AcceptanceFilterConfiguration *filter_configs, uint8_t num_filter_configs);
+bool rcan_filter_calculate_std(const uint32_t *source_sequence, uint32_t size,
+                               rcan_mask_filter_config *const filter_config);
 
 #endif

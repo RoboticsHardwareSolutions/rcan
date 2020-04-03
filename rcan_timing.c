@@ -1,9 +1,10 @@
-#include "rcan_bus_timing.h"
+#include "rcan_timing.h"
+#include "string.h"
 
 
-bool rcan_bus_calculate_timing(const uint32_t peripheral_clock_rate,
-                               const uint32_t target_bitrate,
-                               rcan_timing *const out_timings) {
+bool rcan_calculate_timing(const uint32_t peripheral_clock_rate,
+                           const uint32_t target_bitrate,
+                           rcan_timing *const out_timings) {
 
     if (target_bitrate == 0 || peripheral_clock_rate == 0 || out_timings == NULL || target_bitrate < 1000)
         return false;

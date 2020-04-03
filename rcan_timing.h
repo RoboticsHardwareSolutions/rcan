@@ -1,7 +1,8 @@
-#ifndef __RCAN_BUS_TIMING_H
-#define __RCAN_BUS_TIMING_H
+#ifndef __RCAN_TIMING_H
+#define __RCAN_TIMING_H
 
 #include "stdbool.h"
+#include "stdint.h"
 #include "rcan_bus.h"
 
 typedef struct {
@@ -12,9 +13,9 @@ typedef struct {
 } rcan_timing;
 
 
-bool rcan_bus_calculate_timing(const uint32_t peripheral_clock_rate,
-                               const uint32_t target_bitrate,
-                               rcan_timing *const out_timings);
+bool rcan_calculate_timing(const uint32_t peripheral_clock_rate,
+                           const uint32_t target_bitrate,
+                           rcan_timing *const out_timings);
 
 
 #endif
