@@ -3,7 +3,7 @@
 
 #include "stdbool.h"
 #include "stdint.h"
-#include "rcan_bus.h"
+#include "rcan.h"
 
 typedef struct {
     uint16_t bit_rate_prescaler;                        /// [1, 1024]

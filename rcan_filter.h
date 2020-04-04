@@ -3,6 +3,7 @@
 
 #include "stdbool.h"
 #include "stdint.h"
+
 /**
      * The logic of the hardware acceptance filters can be described as follows:
      *
