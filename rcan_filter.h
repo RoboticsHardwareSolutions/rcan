@@ -45,15 +45,25 @@
      */
 
 
+
+
+
+
 typedef struct {
-    uint32_t id;
-    uint32_t mask;
-} rcan_mask_filter_config;
+    struct {
+        uint32_t id;
+        uint32_t mask;
+    } mask_filter;
 
-bool rcan_filter_calculate_ext(const uint32_t *source_sequence, uint32_t size,
-                               rcan_mask_filter_config *const filter_config);
+    struct {
+        uint32_t from_id;
+        uint32_t to_id;
+    } from_to_filter;
 
-bool rcan_filter_calculate_std(const uint32_t *source_sequence, uint32_t size,
-                               rcan_mask_filter_config *const filter_config);
+    bool is_extended;
+} rcan_filter;
+
+
+bool rcan_filter_calculate(const uint32_t *source_sequence, uint32_t size, rcan_filter *const filter);
 
 #endif

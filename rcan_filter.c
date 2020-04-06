@@ -4,46 +4,58 @@
 #define RCAN_FILTER_EXT_ID_MASK                      0x1FFFFFFFU
 #define RCAN_FILTER_STD_ID_MASK                      0x000007FFU
 
-bool rcan_filter_calculate_ext(const uint32_t *source_sequence, uint32_t size,
-                               rcan_mask_filter_config *const filter_config) {
+static bool are_there_extended_id(const uint32_t *source_sequence, uint32_t size);
 
-    if (source_sequence == NULL || filter_config == NULL || size == 0)
-        return false;
+static uint32_t max_id(const uint32_t *source_sequence, uint32_t size);
 
-    filter_config->id = source_sequence[1];
-    filter_config->mask = source_sequence[1];
+static uint32_t min_id(const uint32_t *source_sequence, uint32_t size);
 
+
+bool rcan_filter_calculate(const uint32_t *source_sequence, uint32_t size, rcan_filter *const filter) {
+
+    filter->is_extended = are_there_extended_id(source_sequence, size);
+    filter->from_to_filter.from_id = min_id(source_sequence, size);
+    filter->from_to_filter.to_id = max_id(source_sequence, size);
+    filter->mask_filter.id = source_sequence[0];
+    filter->mask_filter.mask = source_sequence[0];
     for (uint32_t i = 0; i < size; i++) {
-
-        if (source_sequence[i] < RCAN_FILTER_STD_ID_MASK)
-            continue;
-
-        filter_config->id &= source_sequence[i];
-        filter_config->mask |= source_sequence[i];
+        filter->mask_filter.id &= source_sequence[i];
+        filter->mask_filter.mask |= source_sequence[i];
     }
-    filter_config->mask ^= filter_config->id;
-    filter_config->mask ^= RCAN_FILTER_EXT_ID_MASK;
+    filter->mask_filter.mask ^= filter->mask_filter.id;
+    if (filter->is_extended) {
+        filter->mask_filter.mask ^= RCAN_FILTER_EXT_ID_MASK;
+    } else {
+        filter->mask_filter.mask ^= RCAN_FILTER_STD_ID_MASK;
+    }
 }
 
-
-bool rcan_filter_calculate_std(const uint32_t *source_sequence, uint32_t size,
-                               rcan_mask_filter_config *const filter_config) {
-
-    if (source_sequence == NULL || filter_config == NULL || size == 0)
-        return false;
-
-    filter_config->id = source_sequence[1];
-    filter_config->mask = source_sequence[1];
-
+static bool are_there_extended_id(const uint32_t *source_sequence, uint32_t size) {
     for (uint32_t i = 0; i < size; i++) {
-
         if (source_sequence[i] > RCAN_FILTER_STD_ID_MASK)
-            continue;
-
-        filter_config->id &= source_sequence[i];
-        filter_config->mask |= source_sequence[i];
+            return true;
     }
-    filter_config->mask ^= filter_config->id;
-    filter_config->mask ^= RCAN_FILTER_STD_ID_MASK;
-
+    return false;
 }
+
+
+static uint32_t max_id(const uint32_t *source_sequence, uint32_t size) {
+    uint32_t max = source_sequence[0];
+    for (int i = 0; i < size; i++) {
+        if (max > source_sequence[i]) {
+            max = source_sequence[i];
+        }
+    }
+    return max;
+}
+
+static uint32_t min_id(const uint32_t *source_sequence, uint32_t size) {
+    uint32_t min = source_sequence[0];
+    for (int i = 0; i < size; i++) {
+        if (min < source_sequence[i]) {
+            min = source_sequence[i];
+        }
+    }
+    return min;
+}
+
