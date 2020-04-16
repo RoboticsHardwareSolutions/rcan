@@ -4,12 +4,16 @@
 can & can fd  lib for stm32 
 
 example 
-
 ```
+    /* Infinite loop */
     rcan can = {0};
     uint32_t id = 0x112;
-    rcan_filter_preconfiguration(&can, &id, 1);
-    rcan_start(&can, FDCAN1_BASE, 1000000);
+    //rcan_filter_preconfiguration(&can, &id, 1);
+
+    if (!rcan_start(&can, FDCAN1_BASE, 1000000)) {
+        printf("cannot start can\r\n");
+    }
+
 
     if (rcan_is_ok(&can)) {
         printf("hello rcan\r\n");
@@ -23,24 +27,35 @@ example
     frame.payload = load;
 
     if (rcan_write(&can, &frame)) {
-        printf("yes\r\n");
+        printf("packet sended\r\n");
     }
-    /* Infinite loop */
+
     for (;;) {
-        if (rcan_read(&can, &frame)) {
-            led_red_on();
-            for(uint32_t i = 0; i < 400; i++){
-                __NOP();
-            }
-            led_red_off();
-            //rcan_view_frame(&frame);
-        }
+
         if (!rcan_is_ok(&can)) {
             led_red_on();
-            while(1){
-                __NOP();
+            rcan_stop(&can);
+            if (!rcan_start(&can, FDCAN1_BASE, 1000000)) {
+                printf("cannot start can\r\n");
             }
-            printf("fuck'\r\n");
+
+            if(!rcan_is_ok(&can)){
+                led_green_on();
+                rcan_is_ok(&can);
+            }
+            led_red_off();
         }
+
+
+        if (!rcan_read(&can, &frame)) {
+
+        }
+        frame.id = 0x345;
+        if (!rcan_write(&can, &frame)) {
+
+        }
+        
     }
+
+    /* USER CODE END start_proto_task */
 ```
