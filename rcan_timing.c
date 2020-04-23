@@ -2,9 +2,9 @@
 #include "string.h"
 
 
-bool rcan_calculate_timing(const uint32_t peripheral_clock_rate,
-                           const uint32_t target_bitrate,
-                           rcan_timing *const out_timings) {
+bool rcan_calculate_timing(uint32_t peripheral_clock_rate,
+                           uint32_t target_bitrate,
+                           rcan_timing *out_timings) {
 
     if (target_bitrate == 0 || peripheral_clock_rate == 0 || out_timings == NULL || target_bitrate < 1000)
         return false;
@@ -27,7 +27,7 @@ bool rcan_calculate_timing(const uint32_t peripheral_clock_rate,
      *   125  kbps      16      17
      */
 
-    const uint8_t max_quanta_per_bit = (uint8_t)((target_bitrate >= 1000000) ? 10 : 17);
+    uint8_t max_quanta_per_bit = (uint8_t) ((target_bitrate >= 1000000) ? 10 : 17);
 
     if (!(max_quanta_per_bit <= (max_bs1 + max_bs2)))
         return false;
@@ -45,13 +45,13 @@ bool rcan_calculate_timing(const uint32_t peripheral_clock_rate,
      *   PRESCALER_BS = PCLK / BITRATE
      */
 
-    const uint32_t prescaler_bs = peripheral_clock_rate / target_bitrate;
+    uint32_t prescaler_bs = peripheral_clock_rate / target_bitrate;
 
     /**
      * Searching for such prescaler value so that the number of quanta per bit is highest.
      */
 
-    uint8_t bs1_bs2_sum = (uint8_t)(max_quanta_per_bit - 1);    // NOLINT
+    uint8_t bs1_bs2_sum = (uint8_t) (max_quanta_per_bit - 1);    // NOLINT
 
     while ((prescaler_bs % (1U + bs1_bs2_sum)) != 0) {
 
@@ -61,7 +61,7 @@ bool rcan_calculate_timing(const uint32_t peripheral_clock_rate,
         bs1_bs2_sum--;
     }
 
-    const uint32_t prescaler = prescaler_bs / (1U + bs1_bs2_sum);
+    uint32_t prescaler = prescaler_bs / (1U + bs1_bs2_sum);
 
     if ((prescaler < 1U) || (prescaler > 1024U))
         return false;
@@ -87,22 +87,22 @@ bool rcan_calculate_timing(const uint32_t peripheral_clock_rate,
      *   - With rounding to zero
      */
 
-    uint8_t bs1 = (uint8_t)(((7 * bs1_bs2_sum - 1) + 4) / 8);       // Trying rounding to nearest first
-    uint8_t bs2 = (uint8_t)(bs1_bs2_sum - bs1);
+    uint8_t bs1 = (uint8_t) (((7 * bs1_bs2_sum - 1) + 4) / 8);       // Trying rounding to nearest first
+    uint8_t bs2 = (uint8_t) (bs1_bs2_sum - bs1);
 
 
     if (!(bs1_bs2_sum > bs1))
         return false;
 
-    const uint16_t sample_point_permill = (uint16_t)(1000U * (1U + bs1) / (1U + bs1 + bs2));
+    uint16_t sample_point_permill = (uint16_t) (1000U * (1U + bs1) / (1U + bs1 + bs2));
 
 
     if (sample_point_permill > max_sample_point_location_permill) {
-        bs1 = (uint8_t)((7 * bs1_bs2_sum - 1) / 8);   // Nope, too far; now rounding to zero
-        bs2 = (uint8_t)(bs1_bs2_sum - bs1);
+        bs1 = (uint8_t) ((7 * bs1_bs2_sum - 1) / 8);   // Nope, too far; now rounding to zero
+        bs2 = (uint8_t) (bs1_bs2_sum - bs1);
     }
 
-    const bool valid = (bs1 >= 1) && (bs1 <= max_bs1) && (bs2 >= 1) && (bs2 <= max_bs2);
+    bool valid = (bs1 >= 1) && (bs1 <= max_bs1) && (bs2 >= 1) && (bs2 <= max_bs2);
 
     if ((target_bitrate != (peripheral_clock_rate / (prescaler * (1U + bs1 + bs2)))) || !valid)
         return false; //This actually means that the algorithm has a logic error

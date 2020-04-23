@@ -12,9 +12,9 @@ typedef struct {
 } rcan_timing;
 
 
-bool rcan_calculate_timing(const uint32_t peripheral_clock_rate,
-                           const uint32_t target_bitrate,
-                           rcan_timing *const out_timings);
+bool rcan_calculate_timing(uint32_t peripheral_clock_rate,
+                           uint32_t target_bitrate,
+                           rcan_timing *out_timings);
 
 
 #endif

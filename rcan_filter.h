@@ -46,10 +46,8 @@
 
 
 
-
-
-
 typedef struct {
+
     struct {
         uint32_t id;
         uint32_t mask;
@@ -64,6 +62,6 @@ typedef struct {
 } rcan_filter;
 
 
-bool rcan_filter_calculate(const uint32_t *source_sequence, uint32_t size, rcan_filter *const filter);
+bool rcan_filter_calculate(uint32_t *source_sequence, uint32_t size, rcan_filter *filter);
 
 #endif

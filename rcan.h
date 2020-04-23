@@ -1,6 +1,11 @@
 #ifndef __RCAN_H
 #define __RCAN_H
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "stdbool.h"
 #include "stm32g4xx_hal.h"
 #include "rcan_timing.h"
@@ -27,8 +32,7 @@ typedef struct {
     uint8_t *payload;
 } rcan_frame;
 
-
-bool rcan_filter_preconfiguration(rcan *can, const uint32_t *accepted_ids, uint32_t size);
+bool rcan_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size);
 
 bool rcan_start(rcan *can, uint32_t channel, uint32_t bitrate);
 
@@ -36,11 +40,15 @@ bool rcan_is_ok(rcan *can);
 
 void rcan_stop(rcan *can);
 
-bool rcan_write(rcan *can, rcan_frame *const frame);
+bool rcan_write(rcan *can, rcan_frame *frame);
 
 bool rcan_read(rcan *can, rcan_frame *frame);
 
 void rcan_view_frame(rcan_frame *frame);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -13,10 +13,10 @@ static bool rcan_set_timing(rcan *can, uint32_t bitrate);
 
 static bool rcan_set_data_timing(rcan *can, uint32_t data_bitrate);
 
-static bool rcan_make_can_tx_header(rcan_frame *const frame, FDCAN_TxHeaderTypeDef *tx_header);
+static bool rcan_make_can_tx_header(rcan_frame *frame, FDCAN_TxHeaderTypeDef *tx_header);
 
 
-bool rcan_filter_preconfiguration(rcan *can, const uint32_t *accepted_ids, uint32_t size) {
+bool rcan_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size) {
 
     if (can == NULL || accepted_ids == NULL || size == 0)
         return false;
@@ -144,7 +144,7 @@ bool rcan_read(rcan *can, rcan_frame *frame) {
     success = HAL_FDCAN_GetRxMessage(&can->handle, fifo, &rx_header, frame->payload) == HAL_OK;
     if (success) {
         frame->id = rx_header.Identifier;
-        frame->len = rx_header.DataLength >> 16U;
+        frame->len = (uint32_t)rx_header.DataLength >> 16U;
         if (rx_header.IdType == FDCAN_EXTENDED_ID)
             frame->type = ext;
         else if (rx_header.IdType == FDCAN_STANDARD_ID)
@@ -159,7 +159,7 @@ void rcan_view_frame(rcan_frame *frame) {
     if (frame == NULL || frame->payload == NULL)
         return;
 
-    printf("ID : %8x | %s | LEN : %2d | DATA : ", frame->id, frame->type == std ? "STD" : "EXT", frame->len);
+    printf("ID : %8lx | %s | LEN : %2d | DATA : ", frame->id, frame->type == std ? "STD" : "EXT", frame->len);
     for (uint8_t i = 0; i < frame->len; i++) {
         printf("%02x ", frame->payload[i]);
     }
@@ -218,7 +218,7 @@ static bool rcan_set_data_timing(rcan *can, uint32_t data_bitrate) {
     return true;
 }
 
-static bool rcan_make_can_tx_header(rcan_frame *const frame, FDCAN_TxHeaderTypeDef *tx_header) {
+static bool rcan_make_can_tx_header(rcan_frame *frame, FDCAN_TxHeaderTypeDef *tx_header) {
 
     if (frame->type == std) {
 
