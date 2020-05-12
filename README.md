@@ -28,7 +28,7 @@ void start_proto_task(void const *argument) {
     frame.id = 0x123;
     frame.payload = load;
 
-    if (rcan_write(&can, &frame)) {
+    if (rcan_send(&can, &frame)) {
         printf("packet sended\r\n");
     }
 
@@ -49,11 +49,11 @@ void start_proto_task(void const *argument) {
         }
 
 
-        if (!rcan_read(&can, &frame)) {
+        if (!rcan_receive(&can, &frame)) {
 
         }
         frame.id = 0x345;
-        if (!rcan_write(&can, &frame)) {
+        if (!rcan_send(&can, &frame)) {
 
         }
 

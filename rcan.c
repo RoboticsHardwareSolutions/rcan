@@ -109,7 +109,7 @@ void rcan_stop(rcan *can) {
 }
 
 
-bool rcan_write(rcan *can, rcan_frame *const frame) {
+bool rcan_send(rcan *can, rcan_frame *frame) {
 
     if (can == NULL || frame == NULL || frame->payload == NULL || frame->len > RCAN_MAX_FRAME_PAYLOAD_SIZE)
         return false;
@@ -126,7 +126,7 @@ bool rcan_write(rcan *can, rcan_frame *const frame) {
 }
 
 
-bool rcan_read(rcan *can, rcan_frame *frame) {
+bool rcan_receive(rcan *can, rcan_frame *frame) {
     if (can == NULL || frame == NULL || frame->payload == NULL)
         return false;
 
@@ -196,9 +196,10 @@ static bool rcan_set_filter(rcan *can) {
 
 static bool rcan_set_timing(rcan *can, uint32_t bitrate) {
 
+    //TODO check source of system tick for can !!! if not PCLK1 set error or some other sheet
     uint32_t clock = SystemCoreClock;
-    uint32_t div = can->handle.Init.ClockDivider + 1;
-    if (!rcan_calculate_timing(clock / div, bitrate, &can->timing))
+    //TODO add Divider + convert DIV to value real
+    if (!rcan_calculate_timing(clock, bitrate, &can->timing))
         return false;
 
     can->handle.Init.NominalPrescaler = can->timing.bit_rate_prescaler;
