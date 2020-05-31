@@ -53,12 +53,11 @@ bool rcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
     if (HAL_FDCAN_Init(&can->handle) != HAL_OK)
         return false;
 
-    if (!can->use_filter) {
-        memset(&can->filter, 0, sizeof(rcan_filter));
-    }
+    if (can->use_filter) {
 
-    if (!rcan_set_filter(can))
-        return false;
+        if (!rcan_set_filter(can))
+            return false;
+    }
 
     return HAL_FDCAN_Start(&can->handle) == HAL_OK;
 }
