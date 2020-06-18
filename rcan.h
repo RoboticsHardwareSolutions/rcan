@@ -31,6 +31,7 @@ typedef struct {
     uint32_t id;
     uint8_t len;
     rcan_frame_type type;
+    bool rtr;
     uint8_t *payload;
 } rcan_frame;
 

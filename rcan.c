@@ -148,6 +148,8 @@ bool rcan_receive(rcan *can, rcan_frame *frame) {
             frame->type = ext;
         else if (rx_header.IdType == FDCAN_STANDARD_ID)
             frame->type = std;
+
+        frame->rtr = rx_header.RxFrameType == FDCAN_REMOTE_FRAME ? true : false;
     }
     return success;
 }
@@ -155,7 +157,15 @@ bool rcan_receive(rcan *can, rcan_frame *frame) {
 
 void rcan_view_frame(rcan_frame *frame) {
 
-    if (frame == NULL || frame->payload == NULL)
+    if (frame == NULL)
+        return;
+
+    if(frame->rtr){
+        printf("ID : %8lx RTR ", frame->id);
+        return;
+    }
+
+    if(frame->payload == NULL)
         return;
 
     printf("ID : %8lx | %s | LEN : %2d | DATA : ", frame->id, frame->type == std ? "STD" : "EXT", frame->len);
@@ -233,8 +243,14 @@ static bool rcan_make_can_tx_header(rcan_frame *frame, FDCAN_TxHeaderTypeDef *tx
         return false;
     }
 
-    tx_header->TxFrameType = FDCAN_DATA_FRAME;
-    tx_header->DataLength = frame->len << 16U;
+    if(!frame->rtr){
+        tx_header->TxFrameType = FDCAN_DATA_FRAME;
+        tx_header->DataLength = frame->len << 16U;
+    }else{
+        tx_header->TxFrameType = FDCAN_REMOTE_FRAME;
+        tx_header->DataLength = 0 << 16U;
+    }
+
     tx_header->ErrorStateIndicator = FDCAN_ESI_PASSIVE;
     tx_header->BitRateSwitch = FDCAN_BRS_OFF;
     tx_header->FDFormat = FDCAN_CLASSIC_CAN;

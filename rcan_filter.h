@@ -46,8 +46,10 @@
 
 
 
-typedef struct {
 
+
+
+typedef struct {
     struct {
         uint32_t id;
         uint32_t mask;

@@ -1,12 +1,10 @@
 ## rcan
 
 
-can lib for stm32 and pcan usb adapter on linux, mac, windows 
+can & can fd  lib for stm32 
 
 example 
 ```
-void start_proto_task(void const *argument) {
-    /* USER CODE BEGIN start_proto_task */
     /* Infinite loop */
     rcan can = {0};
     uint32_t id = 0x112;
@@ -56,9 +54,8 @@ void start_proto_task(void const *argument) {
         if (!rcan_send(&can, &frame)) {
 
         }
-
+        
     }
 
     /* USER CODE END start_proto_task */
-}
 ```
