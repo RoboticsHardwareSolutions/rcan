@@ -7,6 +7,7 @@
 
 #define RCAN_MAX_FRAME_PAYLOAD_SIZE                    8
 
+#if defined(STM32G474xx)
 static bool rcan_set_filter(rcan *can);
 
 static bool rcan_set_timing(rcan *can, uint32_t bitrate);
@@ -26,10 +27,13 @@ bool rcan_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t si
 
 }
 
+
+
 bool rcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 
     if (can == NULL || channel == 0 || bitrate == 0)
         return false;
+
 
     can->handle.Instance = (FDCAN_GlobalTypeDef *) channel;
     can->handle.Init.ClockDivider = FDCAN_CLOCK_DIV1;
@@ -54,14 +58,13 @@ bool rcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
         return false;
 
     if (can->use_filter) {
-
         if (!rcan_set_filter(can))
             return false;
     }
 
     return HAL_FDCAN_Start(&can->handle) == HAL_OK;
-}
 
+}
 
 bool rcan_is_ok(rcan *can) {
 
@@ -110,7 +113,11 @@ void rcan_stop(rcan *can) {
 
 bool rcan_send(rcan *can, rcan_frame *frame) {
 
-    if (can == NULL || frame == NULL || frame->payload == NULL || frame->len > RCAN_MAX_FRAME_PAYLOAD_SIZE)
+    if (can == NULL ||
+        frame == NULL ||
+        frame->type == nonframe ||
+        frame->payload == NULL ||
+        frame->len > RCAN_MAX_FRAME_PAYLOAD_SIZE)
         return false;
 
     if (HAL_FDCAN_GetTxFifoFreeLevel(&can->handle) == 0)
@@ -143,7 +150,7 @@ bool rcan_receive(rcan *can, rcan_frame *frame) {
     success = HAL_FDCAN_GetRxMessage(&can->handle, fifo, &rx_header, frame->payload) == HAL_OK;
     if (success) {
         frame->id = rx_header.Identifier;
-        frame->len = (uint32_t)rx_header.DataLength >> 16U;
+        frame->len = (uint32_t) rx_header.DataLength >> 16U;
         if (rx_header.IdType == FDCAN_EXTENDED_ID)
             frame->type = ext;
         else if (rx_header.IdType == FDCAN_STANDARD_ID)
@@ -153,28 +160,6 @@ bool rcan_receive(rcan *can, rcan_frame *frame) {
     }
     return success;
 }
-
-
-void rcan_view_frame(rcan_frame *frame) {
-
-    if (frame == NULL)
-        return;
-
-    if(frame->rtr){
-        printf("ID : %8lx RTR ", frame->id);
-        return;
-    }
-
-    if(frame->payload == NULL)
-        return;
-
-    printf("ID : %8lx | %s | LEN : %2d | DATA : ", frame->id, frame->type == std ? "STD" : "EXT", frame->len);
-    for (uint8_t i = 0; i < frame->len; i++) {
-        printf("%02x ", frame->payload[i]);
-    }
-    printf("\n");
-}
-
 
 static bool rcan_set_filter(rcan *can) {
 
@@ -243,10 +228,10 @@ static bool rcan_make_can_tx_header(rcan_frame *frame, FDCAN_TxHeaderTypeDef *tx
         return false;
     }
 
-    if(!frame->rtr){
+    if (!frame->rtr) {
         tx_header->TxFrameType = FDCAN_DATA_FRAME;
         tx_header->DataLength = frame->len << 16U;
-    }else{
+    } else {
         tx_header->TxFrameType = FDCAN_REMOTE_FRAME;
         tx_header->DataLength = 0 << 16U;
     }
@@ -257,5 +242,166 @@ static bool rcan_make_can_tx_header(rcan_frame *frame, FDCAN_TxHeaderTypeDef *tx
     tx_header->Identifier = frame->id;
     return true;
 }
+
+void rcan_view_frame(rcan_frame *frame) {
+
+    if (frame == NULL)
+        return;
+
+    if (frame->rtr) {
+        printf("ID : %8lx RTR ", frame->id);
+        return;
+    }
+
+    printf("ID : %8lx | %s | LEN : %2d | DATA : ", frame->id, frame->type == std ? "STD" : "EXT", frame->len);
+    for (uint8_t i = 0; i < frame->len; i++) {
+        printf("%02x ", frame->payload[i]);
+    }
+    printf("\n");
+}
+#endif
+
+
+#if defined(WINDOWS) || defined(UNIX) || defined (APPLE)
+
+
+bool rcan_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size) {
+    //TODO make software support filter on macOS and api compactable on linux/win
+
+    if (can == NULL || accepted_ids == NULL || size == 0)
+        return false;
+
+    can->use_filter = true;
+    return rcan_filter_calculate(accepted_ids, size, &can->filter);
+
+}
+
+bool rcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
+
+    if (can == NULL || channel == 0 || bitrate == 0)
+        return false;
+
+    TPCANStatus status;
+
+    status = CAN_Initialize(channel, bitrate, 0, 0, 0);
+
+    if (status != PCAN_ERROR_OK)
+        return false;
+
+    status = CAN_GetValue(channel, PCAN_RECEIVE_EVENT, &can->fd, sizeof(int));
+    if (status != PCAN_ERROR_OK)
+        return false;
+
+    can->channel = channel;
+    can->opened = true;
+    return true;
+}
+
+bool rcan_is_ok(rcan *can) {
+
+    if (!can->opened || can == NULL)
+        return false;
+
+    if (CAN_GetValue(can->channel, PCAN_RECEIVE_EVENT, &can->fd, sizeof(int)) != PCAN_ERROR_OK)
+        return false;
+
+    return true;
+}
+
+void rcan_stop(rcan *can) {
+
+    if (can == NULL)
+        return;
+
+    CAN_Uninitialize(can->channel);
+    can->opened = false;
+}
+
+bool rcan_send(rcan *can, rcan_frame *frame) {
+
+    if (can == NULL ||
+        frame == NULL ||
+        frame->type == nonframe ||
+        frame->len > RCAN_MAX_FRAME_PAYLOAD_SIZE)
+        return false;
+
+
+    TPCANMsg message;
+
+    if (frame->rtr) {
+
+        message.MSGTYPE = PCAN_MESSAGE_RTR;
+
+    } else if (frame->type == ext) {
+
+        message.MSGTYPE = PCAN_MESSAGE_EXTENDED;
+
+    } else if (frame->type == std) {
+
+        message.MSGTYPE = PCAN_MESSAGE_STANDARD;
+        if (frame->id > RCAN_STD_ID_MAX)
+            return false;
+
+    } else {
+
+        return false;
+    }
+
+    message.ID = frame->id;
+    message.LEN = frame->len;
+    memcpy(message.DATA, frame->payload, frame->len);
+    return CAN_Write(can->channel, &message) == PCAN_ERROR_OK ? true : false;
+}
+
+bool rcan_receive(rcan *can, rcan_frame *frame){
+
+    if (can == NULL || frame == NULL )
+        return false;
+
+    TPCANMsg message;
+    TPCANStatus status;
+
+    status = CAN_Read(can->channel, &message, NULL);
+
+    if (status == PCAN_ERROR_QRCVEMPTY)
+        return false;
+    else if (status != PCAN_ERROR_OK)
+        return false;
+
+
+    frame->len = message.LEN;
+    frame->id = message.ID;
+
+    if(message.MSGTYPE == PCAN_MESSAGE_EXTENDED)
+        frame->type = ext;
+    else if(message.MSGTYPE == PCAN_MESSAGE_STANDARD)
+        frame->type = std;
+    else if (message.MSGTYPE == PCAN_MESSAGE_RTR)
+        frame->rtr = true; // TODO get real rtr frame and look payload size
+
+
+    memcpy(frame->payload, &message.DATA, message.LEN);
+    return true;
+
+}
+
+void rcan_view_frame(rcan_frame *frame) {
+
+    if (frame == NULL)
+        return;
+
+    if (frame->rtr) {
+        printf("ID : %8x RTR ", frame->id);
+        return;
+    }
+
+    printf("ID : %8x | %s | LEN : %2d | DATA : ", frame->id, frame->type == std ? "STD" : "EXT", frame->len);
+    for (uint8_t i = 0; i < frame->len; i++) {
+        printf("%02x ", frame->payload[i]);
+    }
+    printf("\n");
+}
+
+#endif
 
 

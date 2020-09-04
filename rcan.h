@@ -7,9 +7,11 @@ extern "C" {
 #endif
 
 #include "stdbool.h"
-#include "stm32g4xx_hal.h"
-#include "rcan_timing.h"
-#include "rcan_filter.h"
+#include "defines.h"
+
+#define RCAN_MAX_FRAME_PAYLOAD_SIZE                    8
+
+typedef struct can_iface rcan;
 
 typedef enum {
     nonframe,
@@ -17,12 +19,6 @@ typedef enum {
     ext
 } rcan_frame_type;
 
-typedef struct {
-    FDCAN_HandleTypeDef handle;
-    rcan_timing timing;
-    rcan_filter filter;
-    bool use_filter;
-} rcan;
 
 #pragma pack(push)
 #pragma pack(1)
@@ -32,7 +28,7 @@ typedef struct {
     uint8_t len;
     rcan_frame_type type;
     bool rtr;
-    uint8_t *payload;
+    uint8_t payload[RCAN_MAX_FRAME_PAYLOAD_SIZE];
 } rcan_frame;
 
 #pragma pack(pop)
