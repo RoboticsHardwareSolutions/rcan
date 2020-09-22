@@ -353,9 +353,9 @@ bool rcan_send(rcan *can, rcan_frame *frame) {
     return CAN_Write(can->channel, &message) == PCAN_ERROR_OK ? true : false;
 }
 
-bool rcan_receive(rcan *can, rcan_frame *frame){
+bool rcan_receive(rcan *can, rcan_frame *frame) {
 
-    if (can == NULL || frame == NULL )
+    if (can == NULL || frame == NULL)
         return false;
 
     TPCANMsg message;
@@ -372,9 +372,9 @@ bool rcan_receive(rcan *can, rcan_frame *frame){
     frame->len = message.LEN;
     frame->id = message.ID;
 
-    if(message.MSGTYPE == PCAN_MESSAGE_EXTENDED)
+    if (message.MSGTYPE == PCAN_MESSAGE_EXTENDED)
         frame->type = ext;
-    else if(message.MSGTYPE == PCAN_MESSAGE_STANDARD)
+    else if (message.MSGTYPE == PCAN_MESSAGE_STANDARD)
         frame->type = std;
     else if (message.MSGTYPE == PCAN_MESSAGE_RTR)
         frame->rtr = true; // TODO get real rtr frame and look payload size

@@ -1,3 +1,7 @@
+#ifndef __DEFINES_H
+#define __DEFINES_H
+
+
 #if defined(APPLE)
 #include "PCBUSB.h"
 #endif
@@ -20,7 +24,7 @@
 
 #if defined(WINDOWS) || defined(UNIX) || defined (APPLE)
 
-struct can_iface{
+struct can_iface {
     uint32_t channel;
     int fd;
     bool opened; // FIXME real need it ?
@@ -38,4 +42,8 @@ struct can_iface {
 };
 
 #endif
+
+#endif
+
+
 

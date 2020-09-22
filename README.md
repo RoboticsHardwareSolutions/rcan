@@ -1,14 +1,23 @@
 ## rcan
 
+can & can fd  lib for stm32 unix apple windows
 
-can & can fd  lib for stm32 
-
-example 
+for using in CMake project add in CMakeLists.txt
 ```
-    /* Infinite loop */
+include(rcan/librcan.cmake)
+include_directories(rcan)
+
+add_executable(rcan/rcan_filter.c rcan/rcan_timing.c rcan/rcan.c )
+target_link_libraries(....  ${LIBRARIES}) 
+```
+
+
+example
+ 
+```
     rcan can = {0};
     uint32_t id = 0x112;
-    //rcan_filter_preconfiguration(&can, &id, 1);
+    rcan_filter_preconfiguration(&can, &id, 1);
 
     if (!rcan_start(&can, FDCAN1_BASE, 1000000)) {
         printf("cannot start can\r\n");
@@ -57,5 +66,4 @@ example
         
     }
 
-    /* USER CODE END start_proto_task */
 ```
