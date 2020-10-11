@@ -28,7 +28,6 @@ bool rcan_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t si
 }
 
 
-
 bool rcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 
     if (can == NULL || channel == 0 || bitrate == 0)
@@ -191,6 +190,7 @@ static bool rcan_set_filter(rcan *can) {
 static bool rcan_set_timing(rcan *can, uint32_t bitrate) {
 
     //TODO check source of system tick for can !!! if not PCLK1 set error or some other sheet
+    //TODO add  uint32_t clock = HAL_RCC_GetPCLK1Freq();
     uint32_t clock = SystemCoreClock;
     //TODO add Divider + convert DIV to value real
     if (!rcan_calculate_timing(clock, bitrate, &can->timing))
