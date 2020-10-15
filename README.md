@@ -1,8 +1,20 @@
 ## rcan
 
-can & can fd  lib for stm32 unix apple windows
+simple C CAN lib for : `unix` | `macos` | `windows` | `stm32`
 
-for using in CMake project add in CMakeLists.txt
+supported hardware : `stm32 can`  `PCAN-USB` `PCAN-PCI` 
+
+for start using:  
+`$ cd ~/your_project_root_directory`    
+`git submodule add git@gitlab.com:RoboticsHardwareSolutions/rlibs/rcan.git`   
+ 
+OR   
+`$ cd ~/your_project_root_directory`  
+`$ mkdir rcan`  
+after copy content of repository to folder rcan   
+
+
+For using in CMake project add in CMakeLists.txt next string 
 ```
 include(rcan/librcan.cmake)
 include_directories(rcan)
