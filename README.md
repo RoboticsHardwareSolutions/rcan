@@ -17,9 +17,11 @@ after copy content of repository to folder rcan
 For using in CMake project add in CMakeLists.txt next string 
 ```
 include(rcan/librcan.cmake)
-include_directories(rcan)
 
-add_executable(rcan/rcan_filter.c rcan/rcan_timing.c rcan/rcan.c )
+include_directories( ... ${RCAN_DIRECTORIES})
+
+add_executable(... ${RCAN_EXECUTABLE_FILES})
+
 target_link_libraries(....  ${LIBRARIES}) 
 ```
 
