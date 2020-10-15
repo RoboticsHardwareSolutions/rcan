@@ -12,58 +12,47 @@ target_link_libraries(....  ${LIBRARIES})
 ```
 
 
-example
+example :
  
 ```
-    rcan can = {0};
-    uint32_t id = 0x112;
-    rcan_filter_preconfiguration(&can, &id, 1);
+#include <stdio.h>
+#include <signal.h>
+#include <errno.h>
+#include "stdbool.h"
+#include "rcan.h"
 
-    if (!rcan_start(&can, FDCAN1_BASE, 1000000)) {
-        printf("cannot start can\r\n");
+
+volatile bool quit = false;
+
+rcan can;
+
+rcan_frame frame = {.id = 123, .type = std, .len = 5,
+        .payload = {0x01, 0x02, 0x03, 0x04, 0x05}};
+
+
+void sigterm(int signo) {
+    quit = true;
+}
+
+int main(int argc, char *argv[]) {
+
+    if ((signal(SIGTERM, sigterm) == SIG_ERR) ||
+        (signal(SIGINT, sigterm) == SIG_ERR)) {
+        perror("Error");
+        return errno;
     }
 
+    rcan_start(&can, PCAN_USBBUS1, 1000000);
+    rcan_send(&can, &frame);
 
-    if (rcan_is_ok(&can)) {
-        printf("hello rcan\r\n");
+    while (!quit) {
+
+        if (rcan_receive(&can, &frame))
+            rcan_view_frame(&frame);
+
+        if (!rcan_is_ok(&can))
+            quit = true;
     }
-
-    rcan_frame frame = {0};
-    uint8_t load[8] = {0x01, 0x02, 0x03, 0x04, 0x05};
-    frame.len = sizeof(load);
-    frame.type = std;
-    frame.id = 0x123;
-    frame.payload = load;
-
-    if (rcan_send(&can, &frame)) {
-        printf("packet sended\r\n");
-    }
-
-    for (;;) {
-
-        if (!rcan_is_ok(&can)) {
-            led_red_on();
-            rcan_stop(&can);
-            if (!rcan_start(&can, FDCAN1_BASE, 1000000)) {
-                printf("cannot start can\r\n");
-            }
-
-            if(!rcan_is_ok(&can)){
-                led_green_on();
-                rcan_is_ok(&can);
-            }
-            led_red_off();
-        }
-
-
-        if (!rcan_receive(&can, &frame)) {
-
-        }
-        frame.id = 0x345;
-        if (!rcan_send(&can, &frame)) {
-
-        }
-        
-    }
-
+    return 0;
+}
 ```
