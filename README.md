@@ -21,12 +21,14 @@ include(rcan/librcan.cmake)
 include_directories( ... ${RCAN_DIRECTORIES})
 
 add_executable(... ${RCAN_EXECUTABLE_FILES})
-
+```
+next string need only for UNIX WINDOWS MACOS platforms:
+```
 target_link_libraries(....  ${LIBRARIES}) 
 ```
 
 
-example :
+## example :
  
 ```
 #include <stdio.h>

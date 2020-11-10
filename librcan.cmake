@@ -1,5 +1,3 @@
-project(rcan_project)
-
 if (MSVC OR MSYS OR MINGW)
     add_definitions(-m64 -Wa,-mbig-obj)
     set(RCAN_DIRECTORIES rcan/thirdparty/PCAN-Basic-windows)
@@ -18,15 +16,15 @@ if (APPLE)
 endif ()
 
 if (UNIX AND NOT APPLE)
-    set(RCAN_DIRECTORIES  rcan/thirdparty/PCAN-Basic-linux )
+    set(RCAN_DIRECTORIES rcan/thirdparty/PCAN-Basic-linux)
     link_directories(thirdparty/PCAN-Basic-linux)
     set(PCBUSB_LIBRARIES pcanbasic)
     add_definitions(-DUNIX)
     set(LIBRARIES "${PCBUSB_LIBRARIES}")
 endif ()
 
-set(RCAN_DIRECTORIES  ${RCAN_DIRECTORIES} rcan )
-set(RCAN_EXECUTABLE_FILES  rcan/rcan.c rcan/rcan_filter.c rcan/rcan_timing.c)
+set(RCAN_DIRECTORIES ${RCAN_DIRECTORIES} rcan)
+set(RCAN_EXECUTABLE_FILES rcan/rcan.c rcan/rcan_filter.c rcan/rcan_timing.c)
 
 
 

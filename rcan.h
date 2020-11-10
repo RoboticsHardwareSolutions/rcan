@@ -7,7 +7,7 @@ extern "C" {
 #endif
 
 #include "stdbool.h"
-#include "defines.h"
+#include "rcan_def.h"
 
 #define RCAN_MAX_FRAME_PAYLOAD_SIZE                    8
 
