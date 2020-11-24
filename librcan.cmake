@@ -11,7 +11,7 @@ endif ()
 if (APPLE)
     set(RCAN_DIRECTORIES rcan/thirdparty/PCAN-Basic-mac)
     find_library(PCBUSB_LIBRARIES NAMES pcbusb)
-    add_definitions(-DAPPLE)
+    add_definitions(-DRCAN_MACOS)
     set(LIBRARIES "${PCBUSB_LIBRARIES}")
 endif ()
 
@@ -25,6 +25,7 @@ endif ()
 
 set(RCAN_DIRECTORIES ${RCAN_DIRECTORIES} rcan)
 set(RCAN_EXECUTABLE_FILES rcan/rcan.c rcan/rcan_filter.c rcan/rcan_timing.c)
+
 
 
 

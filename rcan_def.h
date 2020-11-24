@@ -2,7 +2,7 @@
 #define __DEFINES_H
 
 
-#if defined(APPLE)
+#if defined(RCAN_MACOS)
 #include "PCBUSB.h"
 #endif
 
@@ -22,7 +22,7 @@
 #include "rcan_filter.h"
 #include "rcan_timing.h"
 
-#if defined(WINDOWS) || defined(UNIX) || defined (APPLE)
+#if defined(WINDOWS) || defined(UNIX) || defined (RCAN_MACOS)
 
 struct can_iface {
     uint32_t channel;

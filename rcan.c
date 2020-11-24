@@ -262,7 +262,7 @@ void rcan_view_frame(rcan_frame *frame) {
 #endif
 
 
-#if defined(WINDOWS) || defined(UNIX) || defined (APPLE)
+#if defined(WINDOWS) || defined(UNIX) || defined (RCAN_MACOS)
 
 
 bool rcan_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size) {

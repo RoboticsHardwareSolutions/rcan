@@ -2,8 +2,15 @@
 
 simple C CAN lib for : `unix` | `macos` | `windows` | `stm32`
 
-supported hardware : `stm32 can`  `PCAN-USB` `PCAN-PCI` 
+supported hardware : `stm32 can`  `PCAN-USB` `PCAN-PCI`
 
+for install:
+
+mac os - [https://gitlab.com/RoboticsHardwareSolutions/maccan](https://gitlab.com/RoboticsHardwareSolutions/maccan)  
+linux - [https://www.peak-system.com/fileadmin/media/linux/files/peak-linux-driver-8.10.2.tar.gz](https://www.peak-system.com/fileadmin/media/linux/files/peak-linux-driver-8.10.2.tar.gz)   
+windows - [https://www.peak-system.com/fileadmin/media/files/PEAK-System_Driver-Setup.zip](https://www.peak-system.com/fileadmin/media/files/PEAK-System_Driver-Setup.zip)   
+STM32 - just use last HAL   
+ 
 for start using:  
 `$ cd ~/your_project_root_directory`    
 `git submodule add git@gitlab.com:RoboticsHardwareSolutions/rlibs/rcan.git`   
@@ -72,3 +79,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 ```
+
