@@ -13,7 +13,7 @@ STM32 - just use last HAL
  
 for start using:  
 `$ cd ~/your_project_root_directory`    
-`git submodule add git@gitlab.com:RoboticsHardwareSolutions/rlibs/rcan.git`   
+`$ git submodule add git@gitlab.com:RoboticsHardwareSolutions/rlibs/rcan.git`   
  
 OR   
 `$ cd ~/your_project_root_directory`  
