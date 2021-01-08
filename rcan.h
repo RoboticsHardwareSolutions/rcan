@@ -39,7 +39,7 @@ bool rcan_start(rcan *can, uint32_t channel, uint32_t bitrate);
 
 bool rcan_is_ok(rcan *can);
 
-void rcan_stop(rcan *can);
+bool rcan_stop(rcan *can);
 
 bool rcan_send(rcan *can, rcan_frame *frame);
 

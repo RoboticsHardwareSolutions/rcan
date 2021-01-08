@@ -6,11 +6,28 @@
 #include "PCBUSB.h"
 #endif
 
-#if defined(UNIX)
+#if defined(RCAN_UNIX)
 #include "PCANBasic.h"
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include <linux/can.h>
+#include <linux/can/raw.h>
+#include <libsocketcan.h>
+
+#define SOCET_CAN0  0x1224 // macro for can socet can iface
+#define SOCET_CAN1  0x1225
+#define SOCET_CAN2  0x1226
+
+#define SOCET_VCAN0  0x1234 // macro for vcan socet can iface
+#define SOCET_VCAN1  0x1235
+#define SOCET_VCAN2  0x1236
+
 #endif
 
-#if defined(WINDOWS)
+#if defined(RCAN_WINDOWS)
 #include <minwindef.h>
 #include "PCANBasic.h"
 #endif
@@ -22,7 +39,7 @@
 #include "rcan_filter.h"
 #include "rcan_timing.h"
 
-#if defined(WINDOWS) || defined(UNIX) || defined (RCAN_MACOS)
+#if defined(RCAN_WINDOWS) || defined(RCAN_UNIX) || defined (RCAN_MACOS)
 
 struct can_iface {
     uint32_t channel;

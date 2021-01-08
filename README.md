@@ -2,12 +2,13 @@
 
 simple C CAN lib for : `unix` | `macos` | `windows` | `stm32`
 
-supported hardware : `stm32 can`  `PCAN-USB` `PCAN-PCI`
+supported hardware : `stm32 can`  `PCAN-USB` `PCAN-PCI` `SOCET CAN UNIX`
 
 for install:
 
 mac os - [https://gitlab.com/RoboticsHardwareSolutions/maccan](https://gitlab.com/RoboticsHardwareSolutions/maccan)  
-linux - [https://www.peak-system.com/fileadmin/media/linux/files/peak-linux-driver-8.10.2.tar.gz](https://www.peak-system.com/fileadmin/media/linux/files/peak-linux-driver-8.10.2.tar.gz)   
+linux - [https://www.peak-system.com/fileadmin/media/linux/files/peak-linux-driver-8.10.2.tar.gz](https://www.peak-system.com/fileadmin/media/linux/files/peak-linux-driver-8.10.2.tar.gz)
+linux socket can -  `$sudo apt-get install  libsocketcan-dev`   
 windows - [https://www.peak-system.com/fileadmin/media/files/PEAK-System_Driver-Setup.zip](https://www.peak-system.com/fileadmin/media/files/PEAK-System_Driver-Setup.zip)   
 STM32 - just use last HAL   
  

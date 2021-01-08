@@ -259,11 +259,34 @@ void rcan_view_frame(rcan_frame *frame) {
     }
     printf("\n");
 }
+#endif // endif rcan STM32G474xx
+
+
+#if defined(RCAN_UNIX)
+
+static bool is_socket_can_iface(uint32_t channel);
+
+static bool translate_socket_can_name(uint32_t channel, struct ifreq *ifr);
+
+static bool socket_can_start(rcan *can, uint32_t channel, uint32_t bitrate);
+
+static bool socet_can_read(rcan *can, rcan_frame *frame);
+
+static bool socet_can_write(rcan *can, rcan_frame *frame);
+
 #endif
 
+#if defined(RCAN_WINDOWS) || defined (RCAN_MACOS) || defined (RCAN_UNIX)
 
-#if defined(WINDOWS) || defined(UNIX) || defined (RCAN_MACOS)
+static bool is_pcan_iface(uint32_t channel);
 
+static bool pcan_start(rcan *can, uint32_t channel, uint32_t bitrate);
+
+static bool pcan_read(rcan *can, rcan_frame *frame);
+
+static bool pcan_write(rcan *can, rcan_frame *frame);
+
+#endif
 
 bool rcan_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size) {
     //TODO make software support filter on macOS and api compactable on linux/win
@@ -281,15 +304,24 @@ bool rcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
     if (can == NULL || channel == 0 || bitrate == 0)
         return false;
 
-    TPCANStatus status;
+    bool success = false;
 
-    status = CAN_Initialize(channel, bitrate, 0, 0, 0);
+#if defined(RCAN_WINDOWS) || defined (RCAN_MACOS)
 
-    if (status != PCAN_ERROR_OK)
-        return false;
+    success = pcan_start(can, channel, bitrate);
 
-    status = CAN_GetValue(channel, PCAN_RECEIVE_EVENT, &can->fd, sizeof(int));
-    if (status != PCAN_ERROR_OK)
+#endif
+
+#if defined(RCAN_UNIX)
+
+    if (is_pcan_iface(channel))
+        success = pcan_start(can, channel, bitrate);
+    else if (is_socket_can_iface(channel))
+        success = socket_can_start(can, channel, bitrate);
+
+#endif
+
+    if (!success)
         return false;
 
     can->channel = channel;
@@ -302,86 +334,102 @@ bool rcan_is_ok(rcan *can) {
     if (!can->opened || can == NULL)
         return false;
 
-    if (CAN_GetValue(can->channel, PCAN_RECEIVE_EVENT, &can->fd, sizeof(int)) != PCAN_ERROR_OK)
-        return false;
+#if defined(RCAN_UNIX)
 
-    return true;
+    if (is_pcan_iface(can->channel)) {
+        return CAN_GetValue(can->channel, PCAN_RECEIVE_EVENT, &can->fd, sizeof(int)) == PCAN_ERROR_OK;
+    } else {
+        //TODO add check socet can state 
+        return true;
+    }
+
+#endif
+
+#if defined(RCAN_WINDOWS) || defined (RCAN_MACOS)
+
+    return CAN_GetValue(can->channel, PCAN_RECEIVE_EVENT, &can->fd, sizeof(int)) == PCAN_ERROR_OK;
+
+#endif
+
 }
 
-void rcan_stop(rcan *can) {
+bool rcan_stop(rcan *can) {
 
-    if (can == NULL)
-        return;
+    if (can == NULL || !can->opened)
+        return false;
+
+#if defined(RCAN_WINDOWS) || defined (RCAN_MACOS)
 
     CAN_Uninitialize(can->channel);
+
+#endif
+
+#if defined(RCAN_UNIX)
+
+    if (is_pcan_iface(can->channel)) {
+
+        CAN_Uninitialize(can->channel);
+
+    } else {
+
+        if (close(can->fd) < 0) {
+            return false;
+        }
+
+    }
+
+#endif
+
     can->opened = false;
+    return true;
+
 }
 
 bool rcan_send(rcan *can, rcan_frame *frame) {
 
     if (can == NULL ||
         frame == NULL ||
+        !can->opened ||
         frame->type == nonframe ||
         frame->len > RCAN_MAX_FRAME_PAYLOAD_SIZE)
         return false;
 
+#if defined(RCAN_WINDOWS) || defined (RCAN_MACOS)
 
-    TPCANMsg message;
+    return pcan_write(can, frame);
 
-    if (frame->rtr) {
+#endif
 
-        message.MSGTYPE = PCAN_MESSAGE_RTR;
+#if defined(RCAN_UNIX)
 
-    } else if (frame->type == ext) {
+    if (is_pcan_iface(can->channel))
+        return pcan_write(can, frame);
+    else
+        return socet_can_write(can, frame);
 
-        message.MSGTYPE = PCAN_MESSAGE_EXTENDED;
+#endif
 
-    } else if (frame->type == std) {
-
-        message.MSGTYPE = PCAN_MESSAGE_STANDARD;
-        if (frame->id > RCAN_STD_ID_MAX)
-            return false;
-
-    } else {
-
-        return false;
-    }
-
-    message.ID = frame->id;
-    message.LEN = frame->len;
-    memcpy(message.DATA, frame->payload, frame->len);
-    return CAN_Write(can->channel, &message) == PCAN_ERROR_OK ? true : false;
 }
 
 bool rcan_receive(rcan *can, rcan_frame *frame) {
 
-    if (can == NULL || frame == NULL)
+    if (can == NULL || frame == NULL || !can->opened)
         return false;
 
-    TPCANMsg message;
-    TPCANStatus status;
+#if defined(RCAN_WINDOWS) || defined (RCAN_MACOS)
 
-    status = CAN_Read(can->channel, &message, NULL);
+    return pcan_read(can, frame);
 
-    if (status == PCAN_ERROR_QRCVEMPTY)
-        return false;
-    else if (status != PCAN_ERROR_OK)
-        return false;
+#endif
 
+#if defined(RCAN_UNIX)
 
-    frame->len = message.LEN;
-    frame->id = message.ID;
+    if (is_pcan_iface(can->channel))
+        return pcan_read(can, frame);
+    else
+        return socet_can_read(can, frame);
 
-    if (message.MSGTYPE == PCAN_MESSAGE_EXTENDED)
-        frame->type = ext;
-    else if (message.MSGTYPE == PCAN_MESSAGE_STANDARD)
-        frame->type = std;
-    else if (message.MSGTYPE == PCAN_MESSAGE_RTR)
-        frame->rtr = true; // TODO get real rtr frame and look payload size
-
-
-    memcpy(frame->payload, &message.DATA, message.LEN);
-    return true;
+#endif
 
 }
 
@@ -400,6 +448,214 @@ void rcan_view_frame(rcan_frame *frame) {
         printf("%02x ", frame->payload[i]);
     }
     printf("\n");
+}
+
+/*********************************************  PCAN  *****************************************************************/
+
+static bool is_pcan_iface(uint32_t channel) {
+
+#if defined(RCAN_UNIX)
+    if (channel == PCAN_USBBUS1 || channel == PCAN_USBBUS2 || channel == PCAN_USBBUS3 ||
+        channel == PCAN_PCIBUS1 || channel == PCAN_PCIBUS2 || channel == PCAN_PCIBUS3)
+        return true;
+#endif
+
+    return false;
+}
+
+static bool pcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
+
+
+    //TODO add  filter configuration
+    TPCANStatus status;
+
+    status = CAN_Initialize(channel, bitrate, 0, 0, 0);
+    if (status != PCAN_ERROR_OK)
+        return false;
+
+    status = CAN_GetValue(channel, PCAN_RECEIVE_EVENT, &can->fd, sizeof(int));
+    if (status != PCAN_ERROR_OK)
+        return false;
+
+    return true;
+}
+
+static bool pcan_read(rcan *can, rcan_frame *frame) {
+
+    TPCANMsg message;
+    TPCANStatus status;
+
+    status = CAN_Read(can->channel, &message, NULL);
+
+    if (status == PCAN_ERROR_QRCVEMPTY)
+        return false;
+    else if (status != PCAN_ERROR_OK)
+        return false;
+
+
+    // TODO read error message after you must return false
+
+    frame->len = message.LEN;
+    frame->id = message.ID;
+
+    if (message.MSGTYPE == PCAN_MESSAGE_EXTENDED)
+        frame->type = ext;
+    else if (message.MSGTYPE == PCAN_MESSAGE_STANDARD)
+        frame->type = std;
+    else if (message.MSGTYPE == PCAN_MESSAGE_RTR)
+        frame->rtr = true; // TODO get real rtr frame and look payload size
+
+    memcpy(frame->payload, &message.DATA, message.LEN);
+    return true;
+}
+
+static bool pcan_write(rcan *can, rcan_frame *frame) {
+
+    TPCANMsg message;
+
+    if (frame->rtr) {
+        message.MSGTYPE = PCAN_MESSAGE_RTR;
+    } else if (frame->type == ext) {
+        message.MSGTYPE = PCAN_MESSAGE_EXTENDED;
+    } else if (frame->type == std) {
+
+        message.MSGTYPE = PCAN_MESSAGE_STANDARD;
+        if (frame->id > RCAN_STD_ID_MAX)
+            return false;
+    } else {
+        return false;
+    }
+
+    message.ID = frame->id;
+    message.LEN = frame->len;
+    memcpy(message.DATA, frame->payload, frame->len);
+    return CAN_Write(can->channel, &message) == PCAN_ERROR_OK ? true : false;
+
+}
+
+
+/***************************************  SOCET CAN   *****************************************************************/
+
+#if defined(RCAN_UNIX)
+
+static bool is_socket_can_iface(uint32_t channel) {
+
+    if (channel == SOCET_VCAN0 || channel == SOCET_VCAN1 || channel == SOCET_VCAN2 ||
+        channel == SOCET_CAN0 || channel == SOCET_CAN1 || channel == SOCET_CAN2)
+        return true;
+
+    return false;
+}
+
+static bool translate_socket_can_name(uint32_t channel, struct ifreq *ifr) {
+
+    if (channel == SOCET_VCAN0)
+        strcpy(ifr->ifr_ifrn.ifrn_name, "vcan0");
+    else if (channel == SOCET_VCAN1)
+        strcpy(ifr->ifr_ifrn.ifrn_name, "vcan1");
+    else if (channel == SOCET_VCAN2)
+        strcpy(ifr->ifr_ifrn.ifrn_name, "vcan2");
+    else if (channel == SOCET_CAN0)
+        strcpy(ifr->ifr_ifrn.ifrn_name, "can0");
+    else if (channel == SOCET_CAN1)
+        strcpy(ifr->ifr_ifrn.ifrn_name, "can1");
+    else if (channel == SOCET_CAN2)
+        strcpy(ifr->ifr_ifrn.ifrn_name, "can2");
+    else
+        return false;
+
+    return true;
+}
+
+static bool socket_can_start(rcan *can, uint32_t channel, uint32_t bitrate) {
+
+    //TODO add bitrate and filter configuration
+    struct sockaddr_can addr;
+    struct ifreq ifr;
+
+    if (translate_socket_can_name(channel, &ifr))
+        return false;
+
+    if (can_do_start(ifr.ifr_ifrn.ifrn_name) != 0)
+        return false;
+
+    if (can_set_bitrate(ifr.ifr_ifrn.ifrn_name, bitrate) != 0)
+        return false;
+
+    if ((can->fd = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0)
+        return false;
+
+
+    ioctl(can->fd, SIOCGIFINDEX, &ifr);
+    memset(&addr, 0, sizeof(addr));
+    addr.can_family = AF_CAN;
+    addr.can_ifindex = ifr.ifr_ifindex;
+
+    if (bind(can->fd, (struct sockaddr *) &addr, sizeof(addr)) < 0)
+        return false;
+
+
+}
+
+static bool socet_can_read(rcan *can, rcan_frame *frame) {
+
+    int nbytes;
+    struct can_frame socet_can_frame;
+
+    nbytes = read(can->fd, &socet_can_frame, sizeof(struct can_frame));
+
+    if (nbytes < 0)
+        return false;
+
+    if (socet_can_frame.can_id & 0x20000000U)
+        return false;
+
+    if (socet_can_frame.can_id & 0x80000000U) {
+        frame->id = socet_can_frame.can_id & RCAN_EXT_ID_MAX;
+        frame->type = ext;
+    } else {
+        frame->id = socet_can_frame.can_id & RCAN_STD_ID_MAX;
+        frame->type = std;
+    }
+
+    frame->rtr = socet_can_frame.can_id & 0x40000000U > 0U ? true : false;
+    frame->len = socet_can_frame.can_dlc;
+    memcpy(frame->payload, socet_can_frame.data, frame->len);
+    return true;
+
+}
+
+static bool socet_can_write(rcan *can, rcan_frame *frame) {
+
+    struct can_frame socet_can_frame;
+
+    /**
+      * bit 0-28	: CAN identifier (11/29 bit)
+      * bit 29	: error message frame flag (0 = data frame, 1 = error message)
+      * bit 30	: remote transmission request flag (1 = rtr frame)
+      * bit 31	: frame format flag (0 = standard 11 bit, 1 = extended 29 bit)
+      */
+
+    socet_can_frame.can_id = frame->id;
+
+    if (frame->rtr) {
+        socet_can_frame.can_id |= 0x40000000U;
+    } else if (frame->type == ext) {
+        socet_can_frame.can_id |= 0x80000000U;
+    } else if (frame->type == std) {
+        socet_can_frame.can_id &= ~0x80000000U;
+        if (frame->id > RCAN_STD_ID_MAX)
+            return false;
+    } else {
+        return false;
+    }
+
+    socet_can_frame.can_dlc = frame->len;
+    memcpy(socet_can_frame.data, frame->payload, frame->len);
+
+    if (write(can->fd, &socet_can_frame, sizeof(struct can_frame)) != sizeof(struct can_frame))
+        return false;
+
 }
 
 #endif
