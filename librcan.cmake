@@ -21,6 +21,7 @@ if (UNIX AND NOT APPLE)
     set(PCBUSB_LIBRARIES pcanbasic)
     add_definitions(-DRCAN_UNIX)
     set(LIBRARIES "${PCBUSB_LIBRARIES}")
+    set(LIBRARIES ${LIBRARIES} socketcan)
 endif ()
 
 set(RCAN_DIRECTORIES ${RCAN_DIRECTORIES} rcan)

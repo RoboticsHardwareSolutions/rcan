@@ -266,6 +266,8 @@ void rcan_view_frame(rcan_frame *frame) {
 
 static bool is_socket_can_iface(uint32_t channel);
 
+static bool is_vcan_iface(uint32_t channel);
+
 static bool translate_socket_can_name(uint32_t channel, struct ifreq *ifr);
 
 static bool socket_can_start(rcan *can, uint32_t channel, uint32_t bitrate);
@@ -439,7 +441,7 @@ void rcan_view_frame(rcan_frame *frame) {
         return;
 
     if (frame->rtr) {
-        printf("ID : %8x RTR ", frame->id);
+        printf("ID : %8x | RTR \n", frame->id);
         return;
     }
 
@@ -547,6 +549,27 @@ static bool is_socket_can_iface(uint32_t channel) {
     return false;
 }
 
+static bool is_vcan_iface(uint32_t channel) {
+    return channel == SOCET_VCAN0 || channel == SOCET_VCAN1 || channel == SOCET_VCAN2 ? true : false;
+}
+
+
+static void create_vcan(const char *name) {
+
+    char cli_enter[50];
+    char *add = "add";
+    char *delete = "delete";
+
+    memset(cli_enter, '\0', sizeof(cli_enter));
+    sprintf(cli_enter, "sudo ip link %s dev %s ", delete,name);
+    system(cli_enter);
+    memset(cli_enter, '\0', sizeof(cli_enter));
+    sprintf(cli_enter, "sudo ip link %s dev %s type vcan", add, name);
+    system(cli_enter);
+
+}
+
+
 static bool translate_socket_can_name(uint32_t channel, struct ifreq *ifr) {
 
     if (channel == SOCET_VCAN0)
@@ -573,13 +596,23 @@ static bool socket_can_start(rcan *can, uint32_t channel, uint32_t bitrate) {
     struct sockaddr_can addr;
     struct ifreq ifr;
 
-    if (translate_socket_can_name(channel, &ifr))
+    if (!translate_socket_can_name(channel, &ifr))
         return false;
+
+    if (is_vcan_iface(channel))
+        create_vcan(ifr.ifr_ifrn.ifrn_name);
+
+    if (can_do_stop(ifr.ifr_ifrn.ifrn_name) != 0)
+        return false;
+
+    if (!is_vcan_iface(channel)) {
+
+        if (can_set_bitrate(ifr.ifr_ifrn.ifrn_name, bitrate) != 0)
+            return false;
+
+    }
 
     if (can_do_start(ifr.ifr_ifrn.ifrn_name) != 0)
-        return false;
-
-    if (can_set_bitrate(ifr.ifr_ifrn.ifrn_name, bitrate) != 0)
         return false;
 
     if ((can->fd = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0)
@@ -594,7 +627,7 @@ static bool socket_can_start(rcan *can, uint32_t channel, uint32_t bitrate) {
     if (bind(can->fd, (struct sockaddr *) &addr, sizeof(addr)) < 0)
         return false;
 
-
+    return true;
 }
 
 static bool socet_can_read(rcan *can, rcan_frame *frame) {
@@ -618,7 +651,8 @@ static bool socet_can_read(rcan *can, rcan_frame *frame) {
         frame->type = std;
     }
 
-    frame->rtr = socet_can_frame.can_id & 0x40000000U > 0U ? true : false;
+
+    frame->rtr = socet_can_frame.can_id & 0x40000000U ? true : false;
     frame->len = socet_can_frame.can_dlc;
     memcpy(frame->payload, socet_can_frame.data, frame->len);
     return true;
@@ -628,13 +662,6 @@ static bool socet_can_read(rcan *can, rcan_frame *frame) {
 static bool socet_can_write(rcan *can, rcan_frame *frame) {
 
     struct can_frame socet_can_frame;
-
-    /**
-      * bit 0-28	: CAN identifier (11/29 bit)
-      * bit 29	: error message frame flag (0 = data frame, 1 = error message)
-      * bit 30	: remote transmission request flag (1 = rtr frame)
-      * bit 31	: frame format flag (0 = standard 11 bit, 1 = extended 29 bit)
-      */
 
     socet_can_frame.can_id = frame->id;
 

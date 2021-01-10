@@ -12,6 +12,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "stdlib.h"
 
 #include <linux/can.h>
 #include <linux/can/raw.h>

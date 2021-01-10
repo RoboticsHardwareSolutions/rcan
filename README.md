@@ -6,9 +6,16 @@ supported hardware : `stm32 can`  `PCAN-USB` `PCAN-PCI` `SOCET CAN UNIX`
 
 for install:
 
-mac os - [https://gitlab.com/RoboticsHardwareSolutions/maccan](https://gitlab.com/RoboticsHardwareSolutions/maccan)  
+mac os - [https://gitlab.com/RoboticsHardwareSolutions/maccan](https://gitlab.com/RoboticsHardwareSolutions/maccan)
+  
 linux - [https://www.peak-system.com/fileadmin/media/linux/files/peak-linux-driver-8.10.2.tar.gz](https://www.peak-system.com/fileadmin/media/linux/files/peak-linux-driver-8.10.2.tar.gz)
-linux socket can -  `$sudo apt-get install  libsocketcan-dev`   
+linux socket can :
+```
+$ sudo apt-get install  libsocketcan-dev`
+$ sudo su 
+$ echo peak_usb >> /etc/modules-load.d/peak_usb.conf
+$ echo vcan >> /etc/modules-load.d/vcan.conf
+```
 windows - [https://www.peak-system.com/fileadmin/media/files/PEAK-System_Driver-Setup.zip](https://www.peak-system.com/fileadmin/media/files/PEAK-System_Driver-Setup.zip)   
 STM32 - just use last HAL   
  
