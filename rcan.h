@@ -15,8 +15,8 @@ typedef struct can_iface rcan;
 
 typedef enum {
     nonframe,
-    std,
-    ext
+    std_id,
+    ext_id
 } rcan_frame_type;
 
 

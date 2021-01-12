@@ -18,13 +18,13 @@
 #include <linux/can/raw.h>
 #include <libsocketcan.h>
 
-#define SOCET_CAN0  0x1224 // macro for can socet can iface
-#define SOCET_CAN1  0x1225
-#define SOCET_CAN2  0x1226
+#define SOCKET_CAN0  0x1224 // macro for can socet can iface
+#define SOCKET_CAN1  0x1225
+#define SOCKET_CAN2  0x1226
 
-#define SOCET_VCAN0  0x1234 // macro for vcan socet can iface
-#define SOCET_VCAN1  0x1235
-#define SOCET_VCAN2  0x1236
+#define SOCKET_VCAN0  0x1234 // macro for vcan socet can iface
+#define SOCKET_VCAN1  0x1235
+#define SOCKET_VCAN2  0x1236
 
 #endif
 

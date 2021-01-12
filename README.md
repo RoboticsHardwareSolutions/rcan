@@ -57,7 +57,7 @@ volatile bool quit = false;
 
 rcan can;
 
-rcan_frame frame = {.id = 123, .type = std, .len = 5,
+rcan_frame frame = {.id = 123, .type = std_id, .len = 5,
         .payload = {0x01, 0x02, 0x03, 0x04, 0x05}};
 
 

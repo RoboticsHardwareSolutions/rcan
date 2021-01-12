@@ -151,9 +151,9 @@ bool rcan_receive(rcan *can, rcan_frame *frame) {
         frame->id = rx_header.Identifier;
         frame->len = (uint32_t) rx_header.DataLength >> 16U;
         if (rx_header.IdType == FDCAN_EXTENDED_ID)
-            frame->type = ext;
+            frame->type = ext_id;
         else if (rx_header.IdType == FDCAN_STANDARD_ID)
-            frame->type = std;
+            frame->type = std_id;
 
         frame->rtr = rx_header.RxFrameType == FDCAN_REMOTE_FRAME ? true : false;
     }
@@ -215,14 +215,14 @@ static bool rcan_set_data_timing(rcan *can, uint32_t data_bitrate) {
 
 static bool rcan_make_can_tx_header(rcan_frame *frame, FDCAN_TxHeaderTypeDef *tx_header) {
 
-    if (frame->type == std) {
+    if (frame->type == std_id) {
 
         tx_header->IdType = FDCAN_STANDARD_ID;
 
         if (frame->id > RCAN_STD_ID_MAX)
             return false;
 
-    } else if (frame->type == ext) {
+    } else if (frame->type == ext_id) {
         tx_header->IdType = FDCAN_EXTENDED_ID;
     } else {
         return false;
@@ -253,7 +253,7 @@ void rcan_view_frame(rcan_frame *frame) {
         return;
     }
 
-    printf("ID : %8lx | %s | LEN : %2d | DATA : ", frame->id, frame->type == std ? "STD" : "EXT", frame->len);
+    printf("ID : %8lx | %s | LEN : %2d | DATA : ", frame->id, frame->type == std_id ? "STD" : "EXT", frame->len);
     for (uint8_t i = 0; i < frame->len; i++) {
         printf("%02x ", frame->payload[i]);
     }
@@ -445,7 +445,7 @@ void rcan_view_frame(rcan_frame *frame) {
         return;
     }
 
-    printf("ID : %8x | %s | LEN : %2d | DATA : ", frame->id, frame->type == std ? "STD" : "EXT", frame->len);
+    printf("ID : %8x | %s | LEN : %2d | DATA : ", frame->id, frame->type == std_id ? "STD" : "EXT", frame->len);
     for (uint8_t i = 0; i < frame->len; i++) {
         printf("%02x ", frame->payload[i]);
     }
@@ -501,9 +501,9 @@ static bool pcan_read(rcan *can, rcan_frame *frame) {
     frame->id = message.ID;
 
     if (message.MSGTYPE == PCAN_MESSAGE_EXTENDED)
-        frame->type = ext;
+        frame->type = ext_id;
     else if (message.MSGTYPE == PCAN_MESSAGE_STANDARD)
-        frame->type = std;
+        frame->type = std_id;
     else if (message.MSGTYPE == PCAN_MESSAGE_RTR)
         frame->rtr = true; // TODO get real rtr frame and look payload size
 
@@ -517,9 +517,9 @@ static bool pcan_write(rcan *can, rcan_frame *frame) {
 
     if (frame->rtr) {
         message.MSGTYPE = PCAN_MESSAGE_RTR;
-    } else if (frame->type == ext) {
+    } else if (frame->type == ext_id) {
         message.MSGTYPE = PCAN_MESSAGE_EXTENDED;
-    } else if (frame->type == std) {
+    } else if (frame->type == std_id) {
 
         message.MSGTYPE = PCAN_MESSAGE_STANDARD;
         if (frame->id > RCAN_STD_ID_MAX)
@@ -542,15 +542,15 @@ static bool pcan_write(rcan *can, rcan_frame *frame) {
 
 static bool is_socket_can_iface(uint32_t channel) {
 
-    if (channel == SOCET_VCAN0 || channel == SOCET_VCAN1 || channel == SOCET_VCAN2 ||
-        channel == SOCET_CAN0 || channel == SOCET_CAN1 || channel == SOCET_CAN2)
+    if (channel == SOCKET_VCAN0 || channel == SOCKET_VCAN1 || channel == SOCKET_VCAN2 ||
+        channel == SOCKET_CAN0 || channel == SOCKET_CAN1 || channel == SOCKET_CAN2)
         return true;
 
     return false;
 }
 
 static bool is_vcan_iface(uint32_t channel) {
-    return channel == SOCET_VCAN0 || channel == SOCET_VCAN1 || channel == SOCET_VCAN2 ? true : false;
+    return channel == SOCKET_VCAN0 || channel == SOCKET_VCAN1 || channel == SOCKET_VCAN2 ? true : false;
 }
 
 
@@ -572,17 +572,17 @@ static void create_vcan(const char *name) {
 
 static bool translate_socket_can_name(uint32_t channel, struct ifreq *ifr) {
 
-    if (channel == SOCET_VCAN0)
+    if (channel == SOCKET_VCAN0)
         strcpy(ifr->ifr_ifrn.ifrn_name, "vcan0");
-    else if (channel == SOCET_VCAN1)
+    else if (channel == SOCKET_VCAN1)
         strcpy(ifr->ifr_ifrn.ifrn_name, "vcan1");
-    else if (channel == SOCET_VCAN2)
+    else if (channel == SOCKET_VCAN2)
         strcpy(ifr->ifr_ifrn.ifrn_name, "vcan2");
-    else if (channel == SOCET_CAN0)
+    else if (channel == SOCKET_CAN0)
         strcpy(ifr->ifr_ifrn.ifrn_name, "can0");
-    else if (channel == SOCET_CAN1)
+    else if (channel == SOCKET_CAN1)
         strcpy(ifr->ifr_ifrn.ifrn_name, "can1");
-    else if (channel == SOCET_CAN2)
+    else if (channel == SOCKET_CAN2)
         strcpy(ifr->ifr_ifrn.ifrn_name, "can2");
     else
         return false;
@@ -645,10 +645,10 @@ static bool socet_can_read(rcan *can, rcan_frame *frame) {
 
     if (socet_can_frame.can_id & 0x80000000U) {
         frame->id = socet_can_frame.can_id & RCAN_EXT_ID_MAX;
-        frame->type = ext;
+        frame->type = ext_id;
     } else {
         frame->id = socet_can_frame.can_id & RCAN_STD_ID_MAX;
-        frame->type = std;
+        frame->type = std_id;
     }
 
 
@@ -667,9 +667,9 @@ static bool socet_can_write(rcan *can, rcan_frame *frame) {
 
     if (frame->rtr) {
         socet_can_frame.can_id |= 0x40000000U;
-    } else if (frame->type == ext) {
+    } else if (frame->type == ext_id) {
         socet_can_frame.can_id |= 0x80000000U;
-    } else if (frame->type == std) {
+    } else if (frame->type == std_id) {
         socet_can_frame.can_id &= ~0x80000000U;
         if (frame->id > RCAN_STD_ID_MAX)
             return false;
