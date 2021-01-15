@@ -16,6 +16,37 @@ $ sudo su
 $ echo peak_usb >> /etc/modules-load.d/peak_usb.conf
 $ echo vcan >> /etc/modules-load.d/vcan.conf
 ```
+
+
+linux peak can proprietary (recomended for using pcanview) - [https://www.peak-system.com/fileadmin/media/linux/files/peak-linux-driver-8.10.2.tar.gz](https://www.peak-system.com/fileadmin/media/linux/files/peak-linux-driver-8.10.2.tar.gz)
+install using manual [https://www.peak-system.com/fileadmin/media/linux/files/PCAN-Driver-Linux_UserMan_eng.pdf](https://www.peak-system.com/fileadmin/media/linux/files/PCAN-Driver-Linux_UserMan_eng.pdf)
+```
+$ sudo su
+$ echo pcan >> /etc/modules-load.d/pcan.conf
+```
+Download and install the following file peak-system.list from the PEAK-System website:
+```
+$ wget -q http://www.peak-system.com/debian/dists/`lsb_release -cs`/peak-system.list -O- | sudo tee /etc/apt/sources.list.d/peak-system.list
+```
+Note: If the lsb_release tool is not installed on your Linux system then replace `lsb_release -cs` by the name of your Linux distribution. For example:
+```
+$ wget -q http://www.peak-system.com/debian/dists/wheezy/peak-system.list -O- | sudo tee /etc/apt/sources.list.d/peak-system.list
+```
+Then, download and install the PEAK-System public key for apt-secure, so that the repository is trusted:
+```
+$ wget -q http://www.peak-system.com/debian/peak-system-public-key.asc -O- | sudo apt-key add -
+```
+To install pcanview-ncurses next, do:
+```
+$ sudo apt-get update
+$ sudo apt-get install pcanview-ncurses
+```
+after install PCAN-Basic API for linux [https://www.peak-system.com/quick/BasicLinux](https://www.peak-system.com/quick/BasicLinux)
+```
+$ cd libpcanbasic/pcanbasic
+$ make 
+$ sudo make install 
+```
 windows - [https://www.peak-system.com/fileadmin/media/files/PEAK-System_Driver-Setup.zip](https://www.peak-system.com/fileadmin/media/files/PEAK-System_Driver-Setup.zip)   
 STM32 - just use last HAL   
  

@@ -29,7 +29,7 @@
 #endif
 
 #if defined(RCAN_WINDOWS)
-#include <minwindef.h>
+#include "windows.h"
 #include "PCANBasic.h"
 #endif
 

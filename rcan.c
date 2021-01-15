@@ -303,7 +303,8 @@ bool rcan_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t si
 
 bool rcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 
-    if (can == NULL || channel == 0 || bitrate == 0)
+
+    if (can == NULL || can->opened)
         return false;
 
     bool success = false;
@@ -315,10 +316,16 @@ bool rcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 #endif
 
 #if defined(RCAN_UNIX)
+    if (channel == 0)
+        return false;
 
-    if (is_pcan_iface(channel))
+    if (is_pcan_iface(channel)) {
+
+        if (bitrate == 0 || bitrate > 1000000)
+            return false;
         success = pcan_start(can, channel, bitrate);
-    else if (is_socket_can_iface(channel))
+
+    } else if (is_socket_can_iface(channel))
         success = socket_can_start(can, channel, bitrate);
 
 #endif
@@ -441,7 +448,7 @@ void rcan_view_frame(rcan_frame *frame) {
         return;
 
     if (frame->rtr) {
-        printf("ID : %8x | RTR \n", frame->id);
+        printf("ID : %8x | %s | RTR \n", frame->id, frame->type == std_id ? "STD" : "EXT");
         return;
     }
 
@@ -561,8 +568,9 @@ static void create_vcan(const char *name) {
     char *delete = "delete";
 
     memset(cli_enter, '\0', sizeof(cli_enter));
-    sprintf(cli_enter, "sudo ip link %s dev %s ", delete,name);
+    sprintf(cli_enter, "sudo ip link %s dev %s", delete, name);
     system(cli_enter);
+
     memset(cli_enter, '\0', sizeof(cli_enter));
     sprintf(cli_enter, "sudo ip link %s dev %s type vcan", add, name);
     system(cli_enter);
@@ -596,8 +604,21 @@ static bool socket_can_start(rcan *can, uint32_t channel, uint32_t bitrate) {
     struct sockaddr_can addr;
     struct ifreq ifr;
 
+//    struct can_device_stats can_status = {0};
+//    struct can_ctrlmode can_ctrl_mode = {0};
+//    int can_state = 0;
+
     if (!translate_socket_can_name(channel, &ifr))
         return false;
+
+//    if (can_get_ctrlmode(ifr.ifr_ifrn.ifrn_name, &can_ctrl_mode) != 0)
+//        printf("get ctrl mode error\r\n");
+//
+//    if (can_get_state(ifr.ifr_ifrn.ifrn_name, &can_state) != 0)
+//        printf("get state error\r\n");
+//
+//    if (can_get_device_stats(ifr.ifr_ifrn.ifrn_name, &can_status) != 0)
+//        printf("get device state error\r\n");
 
     if (is_vcan_iface(channel))
         create_vcan(ifr.ifr_ifrn.ifrn_name);
@@ -614,6 +635,7 @@ static bool socket_can_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 
     if (can_do_start(ifr.ifr_ifrn.ifrn_name) != 0)
         return false;
+
 
     if ((can->fd = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0)
         return false;
@@ -643,7 +665,7 @@ static bool socet_can_read(rcan *can, rcan_frame *frame) {
     if (socet_can_frame.can_id & 0x20000000U)
         return false;
 
-    if (socet_can_frame.can_id & 0x80000000U) {
+    if (socet_can_frame.can_id & CAN_EFF_FLAG) {
         frame->id = socet_can_frame.can_id & RCAN_EXT_ID_MAX;
         frame->type = ext_id;
     } else {
@@ -651,12 +673,13 @@ static bool socet_can_read(rcan *can, rcan_frame *frame) {
         frame->type = std_id;
     }
 
-
-    frame->rtr = socet_can_frame.can_id & 0x40000000U ? true : false;
+    frame->rtr = socet_can_frame.can_id & CAN_RTR_FLAG ? true : false;
     frame->len = socet_can_frame.can_dlc;
-    memcpy(frame->payload, socet_can_frame.data, frame->len);
-    return true;
 
+    if (!frame->rtr)
+        memcpy(frame->payload, socet_can_frame.data, frame->len);
+
+    return true;
 }
 
 static bool socet_can_write(rcan *can, rcan_frame *frame) {
@@ -665,16 +688,23 @@ static bool socet_can_write(rcan *can, rcan_frame *frame) {
 
     socet_can_frame.can_id = frame->id;
 
-    if (frame->rtr) {
-        socet_can_frame.can_id |= 0x40000000U;
-    } else if (frame->type == ext_id) {
-        socet_can_frame.can_id |= 0x80000000U;
+    if (frame->rtr)
+        socet_can_frame.can_id |= CAN_RTR_FLAG;
+
+    if (frame->type == ext_id) {
+
+        if (frame->id > RCAN_EXT_ID_MAX)
+            return false;
+
+        socet_can_frame.can_id |= CAN_EFF_FLAG;
+
+
     } else if (frame->type == std_id) {
-        socet_can_frame.can_id &= ~0x80000000U;
+
+        socet_can_frame.can_id &= ~CAN_EFF_FLAG;
+
         if (frame->id > RCAN_STD_ID_MAX)
             return false;
-    } else {
-        return false;
     }
 
     socet_can_frame.can_dlc = frame->len;
@@ -683,6 +713,7 @@ static bool socet_can_write(rcan *can, rcan_frame *frame) {
     if (write(can->fd, &socet_can_frame, sizeof(struct can_frame)) != sizeof(struct can_frame))
         return false;
 
+    return true;
 }
 
 #endif
