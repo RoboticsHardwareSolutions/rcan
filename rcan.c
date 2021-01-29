@@ -282,6 +282,8 @@ static bool socet_can_write(rcan *can, rcan_frame *frame);
 
 static bool is_pcan_iface(uint32_t channel);
 
+static bool is_correct_bitrate_for_pcan(uint32_t bitrate);
+
 static bool pcan_start(rcan *can, uint32_t channel, uint32_t bitrate);
 
 static bool pcan_read(rcan *can, rcan_frame *frame);
@@ -321,7 +323,7 @@ bool rcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 
     if (is_pcan_iface(channel)) {
 
-        if (bitrate == 0 || bitrate > 1000000)
+        if (!is_correct_bitrate_for_pcan(bitrate))
             return false;
         success = pcan_start(can, channel, bitrate);
 
@@ -468,6 +470,18 @@ static bool is_pcan_iface(uint32_t channel) {
         channel == PCAN_PCIBUS1 || channel == PCAN_PCIBUS2 || channel == PCAN_PCIBUS3)
         return true;
 #endif
+
+    return false;
+}
+
+static bool is_correct_bitrate_for_pcan(uint32_t bitrate) {
+
+    if (bitrate == PCAN_BAUD_1M || bitrate == PCAN_BAUD_800K || bitrate == PCAN_BAUD_500K ||
+        bitrate == PCAN_BAUD_250K || bitrate == PCAN_BAUD_125K || bitrate == PCAN_BAUD_100K ||
+        bitrate == PCAN_BAUD_95K || bitrate == PCAN_BAUD_83K || bitrate == PCAN_BAUD_50K ||
+        bitrate == PCAN_BAUD_47K || bitrate == PCAN_BAUD_33K || bitrate == PCAN_BAUD_20K ||
+        bitrate == PCAN_BAUD_10K || bitrate == PCAN_BAUD_5K)
+        return true;
 
     return false;
 }
