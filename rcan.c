@@ -505,14 +505,14 @@ static bool pcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 
 static bool pcan_read(rcan *can, rcan_frame *frame) {
 
-    TPCANMsg message;
+    TPCANMsg message = {0};
     TPCANStatus status;
 
     status = CAN_Read(can->channel, &message, NULL);
 
-    if (status == PCAN_ERROR_QRCVEMPTY)
+    if (status & PCAN_ERROR_QRCVEMPTY)
         return false;
-    else if (status != PCAN_ERROR_OK)
+    else if (status != PCAN_ERROR_OK || message.MSGTYPE & PCAN_MESSAGE_STATUS)
         return false;
 
 
@@ -521,37 +521,49 @@ static bool pcan_read(rcan *can, rcan_frame *frame) {
     frame->len = message.LEN;
     frame->id = message.ID;
 
-    if (message.MSGTYPE == PCAN_MESSAGE_EXTENDED)
+    if (message.MSGTYPE & PCAN_MESSAGE_EXTENDED)
         frame->type = ext_id;
-    else if (message.MSGTYPE == PCAN_MESSAGE_STANDARD)
+    else
         frame->type = std_id;
-    else if (message.MSGTYPE == PCAN_MESSAGE_RTR)
-        frame->rtr = true; // TODO get real rtr frame and look payload size
 
-    memcpy(frame->payload, &message.DATA, message.LEN);
+
+    if (message.MSGTYPE & PCAN_MESSAGE_RTR)
+        frame->rtr = true;
+    else
+        memcpy(frame->payload, &message.DATA, message.LEN);
+
     return true;
 }
 
 static bool pcan_write(rcan *can, rcan_frame *frame) {
 
-    TPCANMsg message;
+    TPCANMsg message = {0};
 
-    if (frame->rtr) {
-        message.MSGTYPE = PCAN_MESSAGE_RTR;
-    } else if (frame->type == ext_id) {
-        message.MSGTYPE = PCAN_MESSAGE_EXTENDED;
-    } else if (frame->type == std_id) {
+    if (frame->type == std_id) {
 
-        message.MSGTYPE = PCAN_MESSAGE_STANDARD;
         if (frame->id > RCAN_STD_ID_MAX)
             return false;
-    } else {
-        return false;
+
+        message.MSGTYPE |= PCAN_MESSAGE_STANDARD;
+
+
+    } else if (frame->type == ext_id) {
+
+        if (frame->id > RCAN_EXT_ID_MAX)
+            return false;
+
+        message.MSGTYPE |= PCAN_MESSAGE_EXTENDED;
     }
+
 
     message.ID = frame->id;
     message.LEN = frame->len;
-    memcpy(message.DATA, frame->payload, frame->len);
+
+    if (frame->rtr)
+        message.MSGTYPE |= PCAN_MESSAGE_RTR;
+    else
+        memcpy(message.DATA, frame->payload, frame->len);
+
     return CAN_Write(can->channel, &message) == PCAN_ERROR_OK ? true : false;
 
 }
