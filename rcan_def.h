@@ -17,6 +17,7 @@
 #include <linux/can.h>
 #include <linux/can/raw.h>
 #include <libsocketcan.h>
+#include <fcntl.h>
 
 #define SOCKET_CAN0  0x1224 // macro for can socet can iface
 #define SOCKET_CAN1  0x1225

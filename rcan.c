@@ -668,6 +668,10 @@ static bool socket_can_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 
 
     ioctl(can->fd, SIOCGIFINDEX, &ifr);
+
+    int flags = fcntl(can->fd, F_GETFL, 0);
+    fcntl(can->fd, F_SETFL, flags | O_NONBLOCK);
+
     memset(&addr, 0, sizeof(addr));
     addr.can_family = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
@@ -688,7 +692,7 @@ static bool socet_can_read(rcan *can, rcan_frame *frame) {
     if (nbytes < 0)
         return false;
 
-    if (socet_can_frame.can_id & 0x20000000U)
+    if (socet_can_frame.can_id & CAN_ERR_FLAG)
         return false;
 
     if (socet_can_frame.can_id & CAN_EFF_FLAG) {
