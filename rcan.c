@@ -8,6 +8,7 @@
 #define RCAN_MAX_FRAME_PAYLOAD_SIZE                    8
 
 #if defined(STM32G474xx)
+
 static bool rcan_set_filter(rcan *can);
 
 static bool rcan_set_timing(rcan *can, uint32_t bitrate);
@@ -102,11 +103,22 @@ bool rcan_is_ok(rcan *can) {
 }
 
 
-void rcan_stop(rcan *can) {
+bool rcan_stop(rcan *can) {
     HAL_Delay(1);
-    HAL_FDCAN_AbortTxRequest(&can->handle, FDCAN_TX_BUFFER0 | FDCAN_TX_BUFFER1 | FDCAN_TX_BUFFER2);
-    HAL_FDCAN_Stop(&can->handle);
-    HAL_FDCAN_DeInit(&can->handle);
+
+    if (HAL_OK != HAL_FDCAN_AbortTxRequest(
+            &can->handle,
+            FDCAN_TX_BUFFER0 | FDCAN_TX_BUFFER1 | FDCAN_TX_BUFFER2)) {
+        return false;
+    }
+
+    if (HAL_OK != HAL_FDCAN_Stop(&can->handle)) {
+        return false;
+    }
+    if (HAL_OK != HAL_FDCAN_DeInit(&can->handle)) {
+        return false;
+    }
+    return true;
 }
 
 
@@ -259,8 +271,11 @@ void rcan_view_frame(rcan_frame *frame) {
     }
     printf("\n");
 }
+
 #endif // endif rcan STM32G474xx
 
+
+#if  !defined(STM32G474xx)
 
 #if defined(RCAN_UNIX)
 
@@ -748,4 +763,4 @@ static bool socet_can_write(rcan *can, rcan_frame *frame) {
 
 #endif
 
-
+#endif // #ifndef (STM32....)
