@@ -10,8 +10,8 @@
      *  accepted -> if(received_id & filter_mask ==  filter_id )
      *
      * Where:
-     *  - accepted      - if true, the receive_frame will be accepted by the filter.
-     *  - received_id   - the CAN ID of the received receive_frame, either 11-bit or 29-bit, with extension bits
+     *  - accepted      - if true, the frame will be accepted by the filter.
+     *  - received_id   - the CAN ID of the received frame, either 11-bit or 29-bit, with extension bits
      *                    marking extended frames, error frames, etc.
      *  - filter_id     - the value of the filter ID register.
      *  - filter_mask   - the value of the filter mask register.
@@ -21,7 +21,7 @@
      *  - RTR - like above, indicates Remote Transmission Request frames.
      *
      * The following truth table summarizes the logic (where: FM - filter mask, FID - filter ID, RID - received
-     * receive_frame ID, A - true if accepted, X - any state):
+     * frame ID, A - true if accepted, X - any state):
      *
      *  FM  FID RID A
      *  0   X   X   1
@@ -36,7 +36,7 @@
      *
      *  FM  FID RID A
      *  0   0   0   1
-     *  0   0   1   0       <-- receive_frame rejected!
+     *  0   0   1   0       <-- frame rejected!
      *  0   1   X   1
      *  1   0   0   1
      *  1   1   0   0

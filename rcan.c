@@ -62,8 +62,6 @@ bool rcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
             return false;
     }
 
-
-
     return HAL_FDCAN_Start(&can->handle) == HAL_OK;
 
 }
@@ -78,7 +76,6 @@ bool rcan_is_ok(rcan *can) {
 
     if (HAL_FDCAN_GetState(&can->handle) == HAL_FDCAN_STATE_ERROR)
         return false;
-
 
     if (__HAL_FDCAN_GET_FLAG(&can->handle, FDCAN_FLAG_RX_FIFO0_MESSAGE_LOST)) {
         __HAL_FDCAN_CLEAR_FLAG(&can->handle, FDCAN_FLAG_RX_FIFO0_MESSAGE_LOST);
@@ -289,9 +286,9 @@ static bool translate_socket_can_name(uint32_t channel, struct ifreq *ifr);
 
 static bool socket_can_start(rcan *can, uint32_t channel, uint32_t bitrate);
 
-static bool socet_can_read(rcan *can, rcan_frame *receive_frame);
+static bool socet_can_read(rcan *can, rcan_frame *frame);
 
-static bool socet_can_write(rcan *can, rcan_frame *receive_frame);
+static bool socet_can_write(rcan *can, rcan_frame *frame);
 
 #endif
 
@@ -303,9 +300,9 @@ static bool is_correct_bitrate_for_pcan(uint32_t bitrate);
 
 static bool pcan_start(rcan *can, uint32_t channel, uint32_t bitrate);
 
-static bool pcan_read(rcan *can, rcan_frame *receive_frame);
+static bool pcan_read(rcan *can, rcan_frame *frame);
 
-static bool pcan_write(rcan *can, rcan_frame *receive_frame);
+static bool pcan_write(rcan *can, rcan_frame *frame);
 
 #endif
 
@@ -413,67 +410,67 @@ bool rcan_stop(rcan *can) {
 
 }
 
-bool rcan_send(rcan *can, rcan_frame *receive_frame) {
+bool rcan_send(rcan *can, rcan_frame *frame) {
 
     if (can == NULL ||
-        receive_frame == NULL ||
+        frame == NULL ||
         !can->opened ||
-        receive_frame->type == nonframe ||
-        receive_frame->len > RCAN_MAX_FRAME_PAYLOAD_SIZE)
+        frame->type == nonframe ||
+        frame->len > RCAN_MAX_FRAME_PAYLOAD_SIZE)
         return false;
 
 #if defined(RCAN_WINDOWS) || defined (RCAN_MACOS)
 
-    return pcan_write(can, receive_frame);
+    return pcan_write(can, frame);
 
 #endif
 
 #if defined(RCAN_UNIX)
 
     if (is_pcan_iface(can->channel))
-        return pcan_write(can, receive_frame);
+        return pcan_write(can, frame);
     else
-        return socet_can_write(can, receive_frame);
+        return socet_can_write(can, frame);
 
 #endif
 
 }
 
-bool rcan_receive(rcan *can, rcan_frame *receive_frame) {
+bool rcan_receive(rcan *can, rcan_frame *frame) {
 
-    if (can == NULL || receive_frame == NULL || !can->opened)
+    if (can == NULL || frame == NULL || !can->opened)
         return false;
 
 #if defined(RCAN_WINDOWS) || defined (RCAN_MACOS)
 
-    return pcan_read(can, receive_frame);
+    return pcan_read(can, frame);
 
 #endif
 
 #if defined(RCAN_UNIX)
 
     if (is_pcan_iface(can->channel))
-        return pcan_read(can, receive_frame);
+        return pcan_read(can, frame);
     else
-        return socet_can_read(can, receive_frame);
+        return socet_can_read(can, frame);
 
 #endif
 
 }
 
-void rcan_view_frame(rcan_frame *receive_frame) {
+void rcan_view_frame(rcan_frame *frame) {
 
-    if (receive_frame == NULL)
+    if (frame == NULL)
         return;
 
-    if (receive_frame->rtr) {
-        printf("ID : %8x | %s | RTR \n", receive_frame->id, receive_frame->type == std_id ? "STD" : "EXT");
+    if (frame->rtr) {
+        printf("ID : %8x | %s | RTR \n", frame->id, frame->type == std_id ? "STD" : "EXT");
         return;
     }
 
-    printf("ID : %8x | %s | LEN : %2d | DATA : ", receive_frame->id, receive_frame->type == std_id ? "STD" : "EXT", receive_frame->len);
-    for (uint8_t i = 0; i < receive_frame->len; i++) {
-        printf("%02x ", receive_frame->payload[i]);
+    printf("ID : %8x | %s | LEN : %2d | DATA : ", frame->id, frame->type == std_id ? "STD" : "EXT", frame->len);
+    for (uint8_t i = 0; i < frame->len; i++) {
+        printf("%02x ", frame->payload[i]);
     }
     printf("\n");
 }
@@ -520,7 +517,7 @@ static bool pcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
     return true;
 }
 
-static bool pcan_read(rcan *can, rcan_frame *receive_frame) {
+static bool pcan_read(rcan *can, rcan_frame *frame) {
 
     TPCANMsg message = {0};
     TPCANStatus status;
@@ -535,51 +532,51 @@ static bool pcan_read(rcan *can, rcan_frame *receive_frame) {
 
     // TODO read error message after you must return false
 
-    receive_frame->len = message.LEN;
-    receive_frame->id = message.ID;
+    frame->len = message.LEN;
+    frame->id = message.ID;
 
     if (message.MSGTYPE & PCAN_MESSAGE_EXTENDED)
-        receive_frame->type = ext_id;
+        frame->type = ext_id;
     else
-        receive_frame->type = std_id;
+        frame->type = std_id;
 
 
     if (message.MSGTYPE & PCAN_MESSAGE_RTR)
-        receive_frame->rtr = true;
+        frame->rtr = true;
     else
-        memcpy(receive_frame->payload, &message.DATA, message.LEN);
+        memcpy(frame->payload, &message.DATA, message.LEN);
 
     return true;
 }
 
-static bool pcan_write(rcan *can, rcan_frame *receive_frame) {
+static bool pcan_write(rcan *can, rcan_frame *frame) {
 
     TPCANMsg message = {0};
 
-    if (receive_frame->type == std_id) {
+    if (frame->type == std_id) {
 
-        if (receive_frame->id > RCAN_STD_ID_MAX)
+        if (frame->id > RCAN_STD_ID_MAX)
             return false;
 
         message.MSGTYPE |= PCAN_MESSAGE_STANDARD;
 
 
-    } else if (receive_frame->type == ext_id) {
+    } else if (frame->type == ext_id) {
 
-        if (receive_frame->id > RCAN_EXT_ID_MAX)
+        if (frame->id > RCAN_EXT_ID_MAX)
             return false;
 
         message.MSGTYPE |= PCAN_MESSAGE_EXTENDED;
     }
 
 
-    message.ID = receive_frame->id;
-    message.LEN = receive_frame->len;
+    message.ID = frame->id;
+    message.LEN = frame->len;
 
-    if (receive_frame->rtr)
+    if (frame->rtr)
         message.MSGTYPE |= PCAN_MESSAGE_RTR;
     else
-        memcpy(message.DATA, receive_frame->payload, receive_frame->len);
+        memcpy(message.DATA, frame->payload, frame->len);
 
     return CAN_Write(can->channel, &message) == PCAN_ERROR_OK ? true : false;
 
@@ -699,7 +696,7 @@ static bool socket_can_start(rcan *can, uint32_t channel, uint32_t bitrate) {
     return true;
 }
 
-static bool socet_can_read(rcan *can, rcan_frame *receive_frame) {
+static bool socet_can_read(rcan *can, rcan_frame *frame) {
 
     int nbytes;
     struct can_frame socet_can_frame;
@@ -713,49 +710,49 @@ static bool socet_can_read(rcan *can, rcan_frame *receive_frame) {
         return false;
 
     if (socet_can_frame.can_id & CAN_EFF_FLAG) {
-        receive_frame->id = socet_can_frame.can_id & RCAN_EXT_ID_MAX;
-        receive_frame->type = ext_id;
+        frame->id = socet_can_frame.can_id & RCAN_EXT_ID_MAX;
+        frame->type = ext_id;
     } else {
-        receive_frame->id = socet_can_frame.can_id & RCAN_STD_ID_MAX;
-        receive_frame->type = std_id;
+        frame->id = socet_can_frame.can_id & RCAN_STD_ID_MAX;
+        frame->type = std_id;
     }
 
-    receive_frame->rtr = socet_can_frame.can_id & CAN_RTR_FLAG ? true : false;
-    receive_frame->len = socet_can_frame.can_dlc;
+    frame->rtr = socet_can_frame.can_id & CAN_RTR_FLAG ? true : false;
+    frame->len = socet_can_frame.can_dlc;
 
-    if (!receive_frame->rtr)
-        memcpy(receive_frame->payload, socet_can_frame.data, receive_frame->len);
+    if (!frame->rtr)
+        memcpy(frame->payload, socet_can_frame.data, frame->len);
 
     return true;
 }
 
-static bool socet_can_write(rcan *can, rcan_frame *receive_frame) {
+static bool socet_can_write(rcan *can, rcan_frame *frame) {
 
     struct can_frame socet_can_frame;
 
-    socet_can_frame.can_id = receive_frame->id;
+    socet_can_frame.can_id = frame->id;
 
-    if (receive_frame->rtr)
+    if (frame->rtr)
         socet_can_frame.can_id |= CAN_RTR_FLAG;
 
-    if (receive_frame->type == ext_id) {
+    if (frame->type == ext_id) {
 
-        if (receive_frame->id > RCAN_EXT_ID_MAX)
+        if (frame->id > RCAN_EXT_ID_MAX)
             return false;
 
         socet_can_frame.can_id |= CAN_EFF_FLAG;
 
 
-    } else if (receive_frame->type == std_id) {
+    } else if (frame->type == std_id) {
 
         socet_can_frame.can_id &= ~CAN_EFF_FLAG;
 
-        if (receive_frame->id > RCAN_STD_ID_MAX)
+        if (frame->id > RCAN_STD_ID_MAX)
             return false;
     }
 
-    socet_can_frame.can_dlc = receive_frame->len;
-    memcpy(socet_can_frame.data, receive_frame->payload, receive_frame->len);
+    socet_can_frame.can_dlc = frame->len;
+    memcpy(socet_can_frame.data, frame->payload, frame->len);
 
     if (write(can->fd, &socet_can_frame, sizeof(struct can_frame)) != sizeof(struct can_frame))
         return false;
