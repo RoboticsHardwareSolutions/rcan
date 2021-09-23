@@ -89,7 +89,9 @@ add_executable(... ${RCAN_EXECUTABLE_FILES})
 next string need only for UNIX WINDOWS MACOS platforms:
 
 ```
-target_link_libraries(....  ${LIBRARIES}) 
+target_link_libraries(....  ${RCAN_LIBRARIES})
+#or 
+set(LIBRARIES .... ${RCAN_LIBRARIES} ) 
 ```
 
 
