@@ -41,7 +41,7 @@
 #include "stm32g4xx_hal.h"
 #endif
 
-#if defined(STM32F767xx)
+#if defined(STM32F767xx) || defined(STM32F765xx)
 
 #include "stm32f7xx_hal.h"
 
@@ -66,7 +66,7 @@ struct can_iface {
     bool use_filter;
 };
 
-#elif defined(STM32F767xx)
+#elif defined(STM32F767xx) || defined(STM32F765xx)
 
 struct can_iface {
     CAN_HandleTypeDef handle;

@@ -765,7 +765,7 @@ static bool socet_can_write(rcan *can, rcan_frame *frame) {
 #endif //  endif for !defined(STM32G474xx || STM32F767xx)
 
 
-#if defined(STM32F767xx)
+#if defined(STM32F767xx) || defined(STM32F765xx)
 
 static bool rcan_set_filter(rcan *can);
 
