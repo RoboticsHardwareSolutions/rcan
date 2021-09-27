@@ -2,6 +2,9 @@
 #define __DEFINES_H
 
 
+#include "rcan_filter.h"
+#include "rcan_timing.h"
+
 #if defined(RCAN_MACOS)
 #include "PCBUSB.h"
 #endif
@@ -38,8 +41,11 @@
 #include "stm32g4xx_hal.h"
 #endif
 
-#include "rcan_filter.h"
-#include "rcan_timing.h"
+#if defined(STM32F767xx)
+
+#include "stm32f7xx_hal.h"
+
+#endif
 
 #if defined(RCAN_WINDOWS) || defined(RCAN_UNIX) || defined (RCAN_MACOS)
 
@@ -55,6 +61,15 @@ struct can_iface {
 
 struct can_iface {
     FDCAN_HandleTypeDef handle;
+    rcan_timing timing;
+    rcan_filter filter;
+    bool use_filter;
+};
+
+#elif defined(STM32F767xx)
+
+struct can_iface {
+    CAN_HandleTypeDef handle;
     rcan_timing timing;
     rcan_filter filter;
     bool use_filter;

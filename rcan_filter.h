@@ -45,10 +45,6 @@
      */
 
 
-
-
-
-
 typedef struct {
     struct {
         uint32_t id;

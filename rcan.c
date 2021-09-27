@@ -274,7 +274,7 @@ void rcan_view_frame(rcan_frame *frame) {
 #endif // endif rcan STM32G474xx
 
 
-#if  !defined(STM32G474xx)
+#if defined(RCAN_WINDOWS) || defined (RCAN_MACOS) || defined (RCAN_UNIX)
 
 #if defined(RCAN_UNIX)
 
@@ -290,7 +290,7 @@ static bool socet_can_read(rcan *can, rcan_frame *frame);
 
 static bool socet_can_write(rcan *can, rcan_frame *frame);
 
-#endif
+#endif // #endif  defined(RCAN_UNIX)
 
 #if defined(RCAN_WINDOWS) || defined (RCAN_MACOS) || defined (RCAN_UNIX)
 
@@ -304,7 +304,7 @@ static bool pcan_read(rcan *can, rcan_frame *frame);
 
 static bool pcan_write(rcan *can, rcan_frame *frame);
 
-#endif
+#endif // endif for defined(RCAN_WINDOWS) || defined (RCAN_MACOS) || defined (RCAN_UNIX)
 
 bool rcan_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size) {
     //TODO make software support filter on macOS and api compactable on linux/win
@@ -762,4 +762,251 @@ static bool socet_can_write(rcan *can, rcan_frame *frame) {
 
 #endif
 
-#endif // #ifndef (STM32....)
+#endif //  endif for !defined(STM32G474xx || STM32F767xx)
+
+
+#if defined(STM32F767xx)
+
+static bool rcan_set_filter(rcan *can);
+
+static bool rcan_set_timing(rcan *can, uint32_t bitrate);
+
+
+static bool rcan_make_can_tx_header(rcan_frame *frame, CAN_TxHeaderTypeDef *tx_header);
+
+bool rcan_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size) {
+
+    if (can == NULL || accepted_ids == NULL || size == 0)
+        return false;
+
+    can->use_filter = true;
+    return rcan_filter_calculate(accepted_ids, size, &can->filter);
+
+}
+
+
+bool rcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
+
+    if (can == NULL || channel == 0 || bitrate == 0)
+        return false;
+
+    can->handle.Instance = (CAN_TypeDef *) channel;
+    can->handle.Init.Mode = CAN_MODE_NORMAL;
+    can->handle.Init.TimeTriggeredMode = DISABLE;
+    can->handle.Init.AutoBusOff = DISABLE;
+    can->handle.Init.AutoWakeUp = DISABLE;
+    can->handle.Init.AutoRetransmission = ENABLE;
+    can->handle.Init.ReceiveFifoLocked = DISABLE;
+    can->handle.Init.TransmitFifoPriority = DISABLE;
+
+    if (!rcan_set_timing(can, bitrate))
+        return false;
+
+    if (HAL_CAN_Init(&can->handle) != HAL_OK)
+        return false;
+
+    if (can->use_filter) {
+        if (!rcan_set_filter(can))
+            return false;
+    }
+
+    return HAL_CAN_Start(&can->handle) == HAL_OK;
+
+}
+
+bool rcan_is_ok(rcan *can) {
+
+    if (HAL_CAN_GetError(&can->handle) != HAL_CAN_ERROR_NONE)
+        return false;
+
+    if (HAL_CAN_GetState(&can->handle) == HAL_CAN_STATE_RESET)
+        return false;
+
+    if (HAL_CAN_GetState(&can->handle) == HAL_CAN_STATE_ERROR)
+        return false;
+
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR0) ||
+        __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR1) ||
+        __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR2) ||
+        __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV0) ||
+        __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV1)) {
+
+        // (__HAL_CAN_CLEAR_FLAG(&can->handle, CAN_FLAG_RX_FIFO0_MESSAGE_LOST);
+        // TODO check any variants of error !!!!
+        return false;
+    }
+
+    return true;
+}
+
+
+bool rcan_stop(rcan *can) {
+
+    if (HAL_OK != HAL_CAN_AbortTxRequest(
+            &can->handle,
+            CAN_TX_MAILBOX0 | CAN_TX_MAILBOX1 | CAN_TX_MAILBOX2)) {
+        return false;
+    }
+
+    if (HAL_OK != HAL_CAN_Stop(&can->handle)) {
+        return false;
+    }
+    if (HAL_OK != HAL_CAN_DeInit(&can->handle)) {
+        return false;
+    }
+    return true;
+}
+
+
+bool rcan_send(rcan *can, rcan_frame *frame) {
+
+    if (can == NULL ||
+        frame == NULL ||
+        frame->type == nonframe ||
+        frame->payload == NULL ||
+        frame->len > RCAN_MAX_FRAME_PAYLOAD_SIZE)
+        return false;
+
+    if (HAL_CAN_GetTxMailboxesFreeLevel(&can->handle) == 0)
+        return false;
+
+    CAN_TxHeaderTypeDef tx_header = {0};
+
+    if (!rcan_make_can_tx_header(frame, &tx_header))
+        return false;
+
+    uint32_t mbox;
+    return HAL_CAN_AddTxMessage(&can->handle, &tx_header, frame->payload, &mbox) == HAL_OK;
+}
+
+
+bool rcan_receive(rcan *can, rcan_frame *frame) {
+
+    if (can == NULL || frame == NULL || frame->payload == NULL)
+        return false;
+
+    uint32_t fifo = 0;
+    if (HAL_CAN_GetRxFifoFillLevel(&can->handle, CAN_RX_FIFO0) != 0)
+        fifo = CAN_RX_FIFO0;
+    else if (HAL_CAN_GetRxFifoFillLevel(&can->handle, CAN_RX_FIFO1) != 0)
+        fifo = CAN_RX_FIFO1;
+    else
+        return false;
+
+    bool success = false;
+    CAN_RxHeaderTypeDef rx_header = {0};
+
+    success = HAL_CAN_GetRxMessage(&can->handle, fifo, &rx_header, frame->payload) == HAL_OK;
+
+    if (success) {
+
+        if (rx_header.IDE == CAN_ID_STD) {
+
+            frame->type = ext_id;
+            frame->id = rx_header.StdId;
+
+        } else if (rx_header.IDE == CAN_ID_EXT) {
+
+            frame->type = std_id;
+            frame->id = rx_header.ExtId;
+        }
+
+        frame->len = rx_header.DLC;
+        frame->rtr = rx_header.RTR == CAN_RTR_REMOTE ? true : false;
+    }
+    return success;
+}
+
+static bool rcan_set_filter(rcan *can) {
+
+    CAN_FilterTypeDef sFilterConfig = {0};
+
+    sFilterConfig.FilterIdHigh = ((can->filter.mask_filter.id << 3) >> 16) & 0xffff;
+    sFilterConfig.FilterIdLow = (uint16_t) (can->filter.mask_filter.id << 3) | CAN_ID_EXT;
+
+    sFilterConfig.FilterMaskIdHigh = (can->filter.mask_filter.mask >> 16) & 0xffff;
+    sFilterConfig.FilterMaskIdLow = can->filter.mask_filter.mask & 0xffff;
+
+    sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+    sFilterConfig.FilterBank = 0;
+    sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+
+
+    sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+    sFilterConfig.FilterActivation = ENABLE;
+    sFilterConfig.SlaveStartFilterBank = 14;
+
+    if (HAL_CAN_ConfigFilter(&can->handle, &sFilterConfig) != HAL_OK)
+        return false;
+
+    return true;
+}
+
+
+static bool rcan_set_timing(rcan *can, uint32_t bitrate) {
+
+    uint32_t clock = HAL_RCC_GetPCLK1Freq();
+    if (!rcan_calculate_timing(clock, bitrate, &can->timing))
+        return false;
+
+    can->handle.Init.Prescaler = can->timing.bit_rate_prescaler;
+    can->handle.Init.SyncJumpWidth = can->timing.max_resynchronization_jump_width;
+    can->handle.Init.TimeSeg1 = can->timing.bit_segment_1;
+    can->handle.Init.TimeSeg2 = can->timing.bit_segment_2;
+    return true;
+}
+
+
+static bool rcan_make_can_tx_header(rcan_frame *frame, CAN_TxHeaderTypeDef *tx_header) {
+
+    if (frame->type == std_id) {
+
+        if (frame->id > RCAN_STD_ID_MAX)
+            return false;
+
+        tx_header->IDE = CAN_ID_STD;
+        tx_header->StdId = frame->id;
+
+    } else if (frame->type == ext_id) {
+
+        tx_header->IDE = CAN_ID_EXT;
+        tx_header->ExtId = frame->id;
+
+    } else {
+
+        return false;
+    }
+
+
+    if (!frame->rtr) {
+
+        tx_header->RTR = CAN_RTR_DATA;
+        tx_header->DLC = frame->len;
+    } else {
+
+        tx_header->RTR = CAN_RTR_REMOTE;
+        tx_header->DLC = 0;
+    }
+
+    tx_header->TransmitGlobalTime = DISABLE;
+    return true;
+}
+
+void rcan_view_frame(rcan_frame *frame) {
+
+    if (frame == NULL)
+        return;
+
+    if (frame->rtr) {
+        printf("ID : %8lx RTR ", frame->id);
+        return;
+    }
+
+    printf("ID : %8lx | %s | LEN : %2d | DATA : ", frame->id, frame->type == std_id ? "STD" : "EXT", frame->len);
+    for (uint8_t i = 0; i < frame->len; i++) {
+        printf("%02x ", frame->payload[i]);
+    }
+    printf("\n");
+}
+
+#endif // endif rcan STM32G474xx
