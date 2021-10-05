@@ -771,6 +771,7 @@ static bool rcan_set_filter(rcan *can);
 
 static bool rcan_set_timing(rcan *can, uint32_t bitrate);
 
+static bool st_prop_bs1_and_bs2_convert(rcan_timing *source, rcan_timing *result);
 
 static bool rcan_make_can_tx_header(rcan_frame *frame, CAN_TxHeaderTypeDef *tx_header);
 
@@ -805,10 +806,8 @@ bool rcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
     if (HAL_CAN_Init(&can->handle) != HAL_OK)
         return false;
 
-    if (can->use_filter) {
-        if (!rcan_set_filter(can))
-            return false;
-    }
+    if (!rcan_set_filter(can))
+        return false;
 
     return HAL_CAN_Start(&can->handle) == HAL_OK;
 
@@ -886,15 +885,16 @@ bool rcan_receive(rcan *can, rcan_frame *frame) {
         return false;
 
     uint32_t fifo = 0;
-    if (HAL_CAN_GetRxFifoFillLevel(&can->handle, CAN_RX_FIFO0) != 0)
-        fifo = CAN_RX_FIFO0;
-    else if (HAL_CAN_GetRxFifoFillLevel(&can->handle, CAN_RX_FIFO1) != 0)
-        fifo = CAN_RX_FIFO1;
-    else
-        return false;
-
     bool success = false;
     CAN_RxHeaderTypeDef rx_header = {0};
+
+    if (HAL_CAN_GetRxFifoFillLevel(&can->handle, CAN_RX_FIFO0) != 0) {
+        fifo = CAN_RX_FIFO0;
+    } else if (HAL_CAN_GetRxFifoFillLevel(&can->handle, CAN_RX_FIFO1) != 0) {
+        fifo = CAN_RX_FIFO1;
+    } else {
+        return false;
+    }
 
     success = HAL_CAN_GetRxMessage(&can->handle, fifo, &rx_header, frame->payload) == HAL_OK;
 
@@ -902,12 +902,12 @@ bool rcan_receive(rcan *can, rcan_frame *frame) {
 
         if (rx_header.IDE == CAN_ID_STD) {
 
-            frame->type = ext_id;
+            frame->type = std_id;
             frame->id = rx_header.StdId;
 
         } else if (rx_header.IDE == CAN_ID_EXT) {
 
-            frame->type = std_id;
+            frame->type = ext_id;
             frame->id = rx_header.ExtId;
         }
 
@@ -921,20 +921,27 @@ static bool rcan_set_filter(rcan *can) {
 
     CAN_FilterTypeDef sFilterConfig = {0};
 
-    sFilterConfig.FilterIdHigh = ((can->filter.mask_filter.id << 3) >> 16) & 0xffff;
-    sFilterConfig.FilterIdLow = (uint16_t) (can->filter.mask_filter.id << 3) | CAN_ID_EXT;
+//    sFilterConfig.FilterIdHigh = ((can->filter.mask_filter.id << 3) >> 16) & 0xffff;
+//    sFilterConfig.FilterIdLow = (uint16_t) (can->filter.mask_filter.id << 3) | CAN_ID_EXT;
+//
+//    sFilterConfig.FilterMaskIdHigh = (can->filter.mask_filter.mask >> 16) & 0xffff;
+//    sFilterConfig.FilterMaskIdLow = can->filter.mask_filter.mask & 0xffff;
 
-    sFilterConfig.FilterMaskIdHigh = (can->filter.mask_filter.mask >> 16) & 0xffff;
-    sFilterConfig.FilterMaskIdLow = can->filter.mask_filter.mask & 0xffff;
+    sFilterConfig.FilterIdHigh = 0;
+    sFilterConfig.FilterIdLow = 0;
+
+    sFilterConfig.FilterMaskIdHigh = 0;
+    sFilterConfig.FilterMaskIdLow = 0;
 
     sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-    sFilterConfig.FilterBank = 0;
     sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+    sFilterConfig.FilterBank = 14;
 
 
-    sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+    //sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0 | CAN_RX_FIFO1;
+    sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO1;
     sFilterConfig.FilterActivation = ENABLE;
-    sFilterConfig.SlaveStartFilterBank = 14;
+    sFilterConfig.SlaveStartFilterBank = 0;
 
     if (HAL_CAN_ConfigFilter(&can->handle, &sFilterConfig) != HAL_OK)
         return false;
@@ -949,10 +956,15 @@ static bool rcan_set_timing(rcan *can, uint32_t bitrate) {
     if (!rcan_calculate_timing(clock, bitrate, &can->timing))
         return false;
 
-    can->handle.Init.Prescaler = can->timing.bit_rate_prescaler;
-    can->handle.Init.SyncJumpWidth = can->timing.max_resynchronization_jump_width;
-    can->handle.Init.TimeSeg1 = can->timing.bit_segment_1;
-    can->handle.Init.TimeSeg2 = can->timing.bit_segment_2;
+    rcan_timing st_timing = {0};
+    if (!st_prop_bs1_and_bs2_convert(&can->timing, &st_timing))
+        return false;
+
+
+    can->handle.Init.Prescaler = st_timing.bit_rate_prescaler;
+    can->handle.Init.SyncJumpWidth = st_timing.max_resynchronization_jump_width;
+    can->handle.Init.TimeSeg1 = st_timing.bit_segment_1;
+    can->handle.Init.TimeSeg2 = st_timing.bit_segment_2;
     return true;
 }
 
@@ -1007,6 +1019,113 @@ void rcan_view_frame(rcan_frame *frame) {
         printf("%02x ", frame->payload[i]);
     }
     printf("\n");
+}
+
+
+static bool st_prop_bs1_and_bs2_convert(rcan_timing *source, rcan_timing *result) {
+
+    result->bit_rate_prescaler = source->bit_rate_prescaler;
+
+    switch (source->bit_segment_2) {
+        case 1:
+            result->bit_segment_2 = CAN_BS2_1TQ;
+            break;
+        case 2:
+            result->bit_segment_2 = CAN_BS2_2TQ;
+            break;
+        case 3:
+            result->bit_segment_2 = CAN_BS2_3TQ;
+            break;
+        case 4:
+            result->bit_segment_2 = CAN_BS2_4TQ;
+            break;
+        case 5:
+            result->bit_segment_2 = CAN_BS2_5TQ;
+            break;
+        case 6:
+            result->bit_segment_2 = CAN_BS2_6TQ;
+            break;
+        case 7:
+            result->bit_segment_2 = CAN_BS2_7TQ;
+            break;
+        case 8:
+            result->bit_segment_2 = CAN_BS2_8TQ;
+            break;
+        default:
+            return false;
+    }
+
+    switch (source->bit_segment_1) {
+        case 1:
+            result->bit_segment_1 = CAN_BS1_1TQ;
+            break;
+        case 2:
+            result->bit_segment_1 = CAN_BS1_2TQ;
+            break;
+        case 3:
+            result->bit_segment_1 = CAN_BS1_3TQ;
+            break;
+        case 4:
+            result->bit_segment_1 = CAN_BS1_4TQ;
+            break;
+        case 5:
+            result->bit_segment_1 = CAN_BS1_5TQ;
+            break;
+        case 6:
+            result->bit_segment_1 = CAN_BS1_6TQ;
+            break;
+        case 7:
+            result->bit_segment_1 = CAN_BS1_7TQ;
+            break;
+        case 8:
+            result->bit_segment_1 = CAN_BS1_8TQ;
+            break;
+        case 9:
+            result->bit_segment_1 = CAN_BS1_8TQ;
+            break;
+        case 10:
+            result->bit_segment_1 = CAN_BS1_10TQ;
+            break;
+        case 11:
+            result->bit_segment_1 = CAN_BS1_11TQ;
+            break;
+        case 12:
+            result->bit_segment_1 = CAN_BS1_12TQ;
+            break;
+        case 13:
+            result->bit_segment_1 = CAN_BS1_13TQ;
+            break;
+        case 14:
+            result->bit_segment_1 = CAN_BS1_14TQ;
+            break;
+        case 15:
+            result->bit_segment_1 = CAN_BS1_15TQ;
+            break;
+        case 16:
+            result->bit_segment_1 = CAN_BS1_16TQ;
+            break;
+        default:
+            return false;
+    }
+
+    switch (source->max_resynchronization_jump_width) {
+        case 1:
+            result->max_resynchronization_jump_width = CAN_SJW_1TQ;
+            break;
+        case 2:
+            result->max_resynchronization_jump_width = CAN_SJW_2TQ;
+            break;
+        case 3:
+            result->max_resynchronization_jump_width = CAN_SJW_3TQ;
+            break;
+        case 4:
+            result->max_resynchronization_jump_width = CAN_SJW_4TQ;
+            break;
+        default:
+            return false;
+
+    }
+    return true;
 }
 
 #endif // endif rcan STM32G474xx

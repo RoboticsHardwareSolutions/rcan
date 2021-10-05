@@ -75,6 +75,7 @@ struct can_iface {
     bool use_filter;
 };
 
+
 #endif
 
 #endif
