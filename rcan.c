@@ -824,16 +824,23 @@ bool rcan_is_ok(rcan *can) {
     if (HAL_CAN_GetState(&can->handle) == HAL_CAN_STATE_ERROR)
         return false;
 
-    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR0) ||
-        __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR1) ||
-        __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR2) ||
-        __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV0) ||
-        __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV1)) {
-
-        // (__HAL_CAN_CLEAR_FLAG(&can->handle, CAN_FLAG_RX_FIFO0_MESSAGE_LOST);
-        // TODO check any variants of error !!!!
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR0))
         return false;
-    }
+
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR1))
+        return false;
+
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR2))
+        return false;
+
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV0))
+        return false;
+
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV1))
+        return false;
+
+    // (__HAL_CAN_CLEAR_FLAG(&can->handle, CAN_FLAG_RX_FIFO0_MESSAGE_LOST);
+    // TODO check any variants of error !!!!
 
     return true;
 }
@@ -875,7 +882,12 @@ bool rcan_send(rcan *can, rcan_frame *frame) {
         return false;
 
     uint32_t mbox;
-    return HAL_CAN_AddTxMessage(&can->handle, &tx_header, frame->payload, &mbox) == HAL_OK;
+
+    if (HAL_CAN_AddTxMessage(&can->handle, &tx_header, frame->payload, &mbox) != HAL_OK)
+        return false;
+
+    return true;
+
 }
 
 
@@ -926,6 +938,14 @@ static bool rcan_set_filter(rcan *can) {
 //
 //    sFilterConfig.FilterMaskIdHigh = (can->filter.mask_filter.mask >> 16) & 0xffff;
 //    sFilterConfig.FilterMaskIdLow = can->filter.mask_filter.mask & 0xffff;
+    if (can->handle.Instance == CAN2) {
+        sFilterConfig.SlaveStartFilterBank = 0;
+        sFilterConfig.FilterBank = 14;
+    }
+    if (can->handle.Instance == CAN1) {
+        sFilterConfig.SlaveStartFilterBank = 14;
+        sFilterConfig.FilterBank = 0;
+    }
 
     sFilterConfig.FilterIdHigh = 0;
     sFilterConfig.FilterIdLow = 0;
@@ -935,11 +955,10 @@ static bool rcan_set_filter(rcan *can) {
 
     sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
     sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
-    sFilterConfig.FilterBank = 14;
 
 
-    //sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0 | CAN_RX_FIFO1;
-    sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO1;
+    sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0 | CAN_RX_FIFO1;
+
     sFilterConfig.FilterActivation = ENABLE;
     sFilterConfig.SlaveStartFilterBank = 0;
 
@@ -965,6 +984,7 @@ static bool rcan_set_timing(rcan *can, uint32_t bitrate) {
     can->handle.Init.SyncJumpWidth = st_timing.max_resynchronization_jump_width;
     can->handle.Init.TimeSeg1 = st_timing.bit_segment_1;
     can->handle.Init.TimeSeg2 = st_timing.bit_segment_2;
+
     return true;
 }
 
@@ -1081,7 +1101,7 @@ static bool st_prop_bs1_and_bs2_convert(rcan_timing *source, rcan_timing *result
             result->bit_segment_1 = CAN_BS1_8TQ;
             break;
         case 9:
-            result->bit_segment_1 = CAN_BS1_8TQ;
+            result->bit_segment_1 = CAN_BS1_9TQ;
             break;
         case 10:
             result->bit_segment_1 = CAN_BS1_10TQ;
