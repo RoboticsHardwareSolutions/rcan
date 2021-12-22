@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
         return errno;
     }
 
-    rcan_start(&can, PCAN_USBBUS1, 1000000);
+    rcan_start(&can, PCAN_USBBUS1, PCAN_BAUD_1M);
     rcan_send(&can, &frame);
 
     while (!quit) {
