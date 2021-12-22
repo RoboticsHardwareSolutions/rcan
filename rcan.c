@@ -815,30 +815,38 @@ bool rcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 
 bool rcan_is_ok(rcan *can) {
 
-    if (HAL_CAN_GetError(&can->handle) != HAL_CAN_ERROR_NONE)
+    if (HAL_CAN_GetError(&can->handle) != HAL_CAN_ERROR_NONE) {
+        printf("HAL_CAN_ERROR_NONE\n");
         return false;
-
-    if (HAL_CAN_GetState(&can->handle) == HAL_CAN_STATE_RESET)
+    }
+    if (HAL_CAN_GetState(&can->handle) == HAL_CAN_STATE_RESET) {
+        printf("HAL_CAN_STATE_RESET\n");
         return false;
-
-    if (HAL_CAN_GetState(&can->handle) == HAL_CAN_STATE_ERROR)
+    }
+    if (HAL_CAN_GetState(&can->handle) == HAL_CAN_STATE_ERROR) {
+        printf("HAL_CAN_STATE_ERROR\n");
         return false;
-
-    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR0))
+    }
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR0)) {
+        printf("CAN_FLAG_TERR0\n");
         return false;
-
-    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR1))
+    }
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR1)) {
+        printf("CAN_FLAG_TERR1\n");
         return false;
-
-    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR2))
+    }
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR2)) {
+        printf("CAN_FLAG_TERR2\n");
         return false;
-
-    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV0))
+    }
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV0)) {
+        printf("CAN_FLAG_FOV0\n");
         return false;
-
-    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV1))
+    }
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV1)) {
+        printf("CAN_FLAG_FOV1\n");
         return false;
-
+    }
     // (__HAL_CAN_CLEAR_FLAG(&can->handle, CAN_FLAG_RX_FIFO0_MESSAGE_LOST);
     // TODO check any variants of error !!!!
 
@@ -873,13 +881,15 @@ bool rcan_send(rcan *can, rcan_frame *frame) {
         frame->len > RCAN_MAX_FRAME_PAYLOAD_SIZE)
         return false;
 
-    if (HAL_CAN_GetTxMailboxesFreeLevel(&can->handle) == 0)
-        return false;
-
     CAN_TxHeaderTypeDef tx_header = {0};
 
-    if (!rcan_make_can_tx_header(frame, &tx_header))
+    if (!rcan_make_can_tx_header(frame, &tx_header)) {
         return false;
+    }
+
+    if (HAL_CAN_GetTxMailboxesFreeLevel(&can->handle) == 0) {
+        return false;
+    }
 
     uint32_t mbox;
 
@@ -887,9 +897,7 @@ bool rcan_send(rcan *can, rcan_frame *frame) {
         return false;
 
     return true;
-
 }
-
 
 bool rcan_receive(rcan *can, rcan_frame *frame) {
 
@@ -900,13 +908,14 @@ bool rcan_receive(rcan *can, rcan_frame *frame) {
     bool success = false;
     CAN_RxHeaderTypeDef rx_header = {0};
 
-    if (HAL_CAN_GetRxFifoFillLevel(&can->handle, CAN_RX_FIFO0) != 0) {
-        fifo = CAN_RX_FIFO0;
-    } else if (HAL_CAN_GetRxFifoFillLevel(&can->handle, CAN_RX_FIFO1) != 0) {
+    uint32_t nfifo0 = HAL_CAN_GetRxFifoFillLevel(&can->handle, CAN_RX_FIFO0), nfifo1 = HAL_CAN_GetRxFifoFillLevel(
+            &can->handle, CAN_RX_FIFO1);
+    if (nfifo0 < nfifo1)
         fifo = CAN_RX_FIFO1;
-    } else {
+    else if (nfifo0 > nfifo1 || (nfifo1 == nfifo0 && nfifo1 != 0))
+        fifo = CAN_RX_FIFO0;
+    else
         return false;
-    }
 
     success = HAL_CAN_GetRxMessage(&can->handle, fifo, &rx_header, frame->payload) == HAL_OK;
 
@@ -939,19 +948,20 @@ static bool rcan_set_filter(rcan *can) {
 //    sFilterConfig.FilterMaskIdHigh = (can->filter.mask_filter.mask >> 16) & 0xffff;
 //    sFilterConfig.FilterMaskIdLow = can->filter.mask_filter.mask & 0xffff;
     if (can->handle.Instance == CAN2) {
-        sFilterConfig.SlaveStartFilterBank = 0;
-        sFilterConfig.FilterBank = 14;
+        sFilterConfig.FilterBank = 1;
     }
     if (can->handle.Instance == CAN1) {
-        sFilterConfig.SlaveStartFilterBank = 14;
         sFilterConfig.FilterBank = 0;
     }
+    if (can->handle.Instance == CAN3) {
+        sFilterConfig.FilterBank = 2;
+    }
 
-    sFilterConfig.FilterIdHigh = 0;
-    sFilterConfig.FilterIdLow = 0;
+    sFilterConfig.FilterIdHigh = (uint16_t) can->filter.mask_filter.id >> 13;
+    sFilterConfig.FilterIdLow = (uint16_t) (can->filter.mask_filter.id << 3) | CAN_ID_EXT;
 
-    sFilterConfig.FilterMaskIdHigh = 0;
-    sFilterConfig.FilterMaskIdLow = 0;
+    sFilterConfig.FilterMaskIdHigh = (uint16_t) can->filter.mask_filter.mask >> 13;
+    sFilterConfig.FilterMaskIdLow = (uint16_t) (can->filter.mask_filter.mask << 3) | CAN_ID_EXT;
 
     sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
     sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
