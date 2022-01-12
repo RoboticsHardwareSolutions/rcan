@@ -70,7 +70,7 @@ extern "C" {
 #define WORD	unsigned short
 #endif
 #ifndef DWORD
-#define DWORD	unsigned long
+#define DWORD	uint32_t
 #endif
 #ifndef QWORD
 #define QWORD	unsigned long long
