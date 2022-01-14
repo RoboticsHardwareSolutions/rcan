@@ -37,6 +37,11 @@
 #include "PCANBasic.h"
 #endif
 
+
+#if defined(STM32F103xB)
+#include "stm32f1xx_hal.h"
+#endif
+
 #if defined(STM32G474xx)
 #include "stm32g4xx_hal.h"
 #endif
@@ -75,6 +80,14 @@ struct can_iface {
     bool use_filter;
 };
 
+#elif defined(STM32F103xB)
+
+struct can_iface {
+    CAN_HandleTypeDef handle;
+    rcan_timing timing;
+    rcan_filter filter;
+    bool use_filter;
+};
 
 #endif
 
