@@ -1,5 +1,6 @@
 #include "rcan.h"
-#if NOT_ARM
+
+#if defined(RCAN_WINDOWS) || defined (RCAN_MACOS) || defined (RCAN_UNIX)
 #include "stdio.h"
 #include "string.h"
 #endif
