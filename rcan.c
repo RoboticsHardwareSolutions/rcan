@@ -1,6 +1,8 @@
 #include "rcan.h"
+#if NOT_ARM
 #include "stdio.h"
 #include "string.h"
+#endif
 
 #define RCAN_EXT_ID_MAX                      0x1FFFFFFFU
 #define RCAN_STD_ID_MAX                      0x000007FFU
@@ -8,7 +10,7 @@
 #define RCAN_MAX_FRAME_PAYLOAD_SIZE                    8
 
 
-#if defined(STM32F103xB)
+#if defined(STM32F072xB) || defined(STM32F103xB)
 
 static bool rcan_set_filter(rcan *can);
 
@@ -187,7 +189,7 @@ static bool rcan_set_filter(rcan *can) {
 //        sFilterConfig.SlaveStartFilterBank = 0;
 //        sFilterConfig.FilterBank = 14;
 //    }
-    if (can->handle.Instance == CAN1) {
+    if (can->handle.Instance == TYPE_DEF_CAN()) {
         sFilterConfig.SlaveStartFilterBank = 14;
         sFilterConfig.FilterBank = 0;
     }
@@ -276,15 +278,19 @@ void rcan_view_frame(rcan_frame *frame) {
         return;
 
     if (frame->rtr) {
+#if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
         printf("ID : %8lx RTR ", frame->id);
+#endif
         return;
     }
 
+#if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
     printf("ID : %8lx | %s | LEN : %2d | DATA : ", frame->id, frame->type == std_id ? "STD" : "EXT", frame->len);
     for (uint8_t i = 0; i < frame->len; i++) {
         printf("%02x ", frame->payload[i]);
     }
     printf("\n");
+#endif
 }
 
 
