@@ -38,7 +38,7 @@
 #endif
 
 
-#if defined(STM32F072xB)
+#if defined(STM32F072xB) || defined(STM32F091xC)
 #include "stm32f0xx_hal.h"
 #define TYPE_DEF_CAN() CAN
 #endif
@@ -76,7 +76,7 @@ struct can_iface {
     bool use_filter;
 };
 
-#elif defined(STM32F072xB) || defined(STM32F103xB) ||defined(STM32F767xx) || defined(STM32F765xx)
+#elif defined(STM32F072xB) || defined(STM32F091xC) || defined(STM32F103xB) ||defined(STM32F767xx) || defined(STM32F765xx)
 
 struct can_iface {
     CAN_HandleTypeDef handle;

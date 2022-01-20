@@ -11,7 +11,7 @@
 #define RCAN_MAX_FRAME_PAYLOAD_SIZE                    8
 
 
-#if defined(STM32F072xB) || defined(STM32F103xB)
+#if defined(STM32F072xB) || defined(STM32F091xC) || defined(STM32F103xB)
 
 static bool rcan_set_filter(rcan *can);
 
