@@ -40,12 +40,10 @@
 
 #if defined(STM32F072xB) || defined(STM32F091xC)
 #include "stm32f0xx_hal.h"
-#define TYPE_DEF_CAN() CAN
 #endif
 
 #if defined(STM32F103xB)
 #include "stm32f1xx_hal.h"
-#define TYPE_DEF_CAN() CAN1
 #endif
 
 #if defined(STM32G474xx)
@@ -54,7 +52,6 @@
 
 #if defined(STM32F767xx) || defined(STM32F765xx)
 #include "stm32f7xx_hal.h"
-#define TYPE_DEF_CAN() CAN1
 #endif
 
 #if defined(RCAN_WINDOWS) || defined(RCAN_UNIX) || defined (RCAN_MACOS)
@@ -76,7 +73,7 @@ struct can_iface {
     bool use_filter;
 };
 
-#elif defined(STM32F072xB) || defined(STM32F091xC) || defined(STM32F103xB) ||defined(STM32F767xx) || defined(STM32F765xx)
+#elif defined(STM32F072xB) || defined(STM32F091xC) || defined(STM32F103xB) || defined(STM32F767xx) || defined(STM32F765xx)
 
 struct can_iface {
     CAN_HandleTypeDef handle;
