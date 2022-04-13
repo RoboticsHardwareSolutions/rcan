@@ -13,7 +13,7 @@
 
 #if defined(STM32G474xx)
 
-static bool rcan_set_filter(rcan *can);
+static bool rcan_set_filter(rcan *can);s
 
 static bool rcan_set_timing(rcan *can, uint32_t bitrate);
 
@@ -35,6 +35,7 @@ bool rcan_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t si
 
 bool rcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 
+    //TODO create function of convert all baudrate to standart.
     if (can == NULL || channel == 0 || bitrate == 0)
         return false;
 
@@ -322,7 +323,7 @@ bool rcan_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t si
 }
 
 bool rcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
-
+    //TODO create function of convert all baudrate to standart.
 
     if (can == NULL || can->opened)
         return false;
@@ -506,7 +507,7 @@ static bool is_correct_bitrate_for_pcan(uint32_t bitrate) {
 
 static bool pcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 
-
+    //TODO create function of convert all baudrate to standart.
     //TODO add  filter configuration
     TPCANStatus status;
 
