@@ -426,7 +426,7 @@ bool rcan_send(rcan *can, rcan_frame *frame) {
 
 #if defined(RCAN_WINDOWS) || defined (RCAN_MACOS)
 
-    чreturn pcan_write(can, frame);
+    return pcan_write(can, frame);
 
 #endif
 

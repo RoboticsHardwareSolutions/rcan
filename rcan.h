@@ -19,7 +19,6 @@ typedef enum {
     ext_id
 } rcan_frame_type;
 
-
 #pragma pack(push)
 #pragma pack(1)
 

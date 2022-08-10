@@ -5,7 +5,7 @@
 #include "stdint.h"
 
 typedef struct {
-    uint16_t bit_rate_prescaler;                        /// [1, 1024]
+    uint16_t bit_rate_prescaler;                         /// [1, 1024]
     uint32_t bit_segment_1;                              /// [1, 16]
     uint32_t bit_segment_2;                              /// [1, 8]
     uint32_t max_resynchronization_jump_width;           /// [1, 4] (recommended value is 1)

@@ -5,8 +5,25 @@
 #include "rcan_filter.h"
 #include "rcan_timing.h"
 
+
+#define SOCKET_CAN0  0x1224UL// macro for can socet can iface
+#define SOCKET_CAN1  0x1225UL
+#define SOCKET_CAN2  0x1226UL
+
+#define SOCKET_VCAN0  0x1234UL // macro for vcan socet can iface
+#define SOCKET_VCAN1  0x1235UL
+#define SOCKET_VCAN2  0x1236UL
+
+
 #if defined(RCAN_MACOS)
+
+
 #include "PCBUSB.h"
+
+#define PCAN_PCIBUS1 0
+#define PCAN_PCIBUS2 0
+#define PCAN_PCIBUS3 0
+
 #endif
 
 #if defined(RCAN_UNIX)
@@ -22,13 +39,7 @@
 #include <libsocketcan.h>
 #include <fcntl.h>
 
-#define SOCKET_CAN0  0x1224UL// macro for can socet can iface
-#define SOCKET_CAN1  0x1225UL
-#define SOCKET_CAN2  0x1226UL
 
-#define SOCKET_VCAN0  0x1234UL // macro for vcan socet can iface
-#define SOCKET_VCAN1  0x1235UL
-#define SOCKET_VCAN2  0x1236UL
 
 #endif
 
