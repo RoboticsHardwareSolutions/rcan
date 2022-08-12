@@ -4,8 +4,25 @@
 #if defined(STM32G474xx)
 
 #include "stdbool.h"
-#include "stm32g4xx_hal.h"
 #include "rcan_def.h"
+#include "rcan_timing.h"
+#include "rcan_filter.h"
+
+#if defined(STM32G474xx)
+
+#include "stm32g4xx_hal.h"
+
+#endif
+
+
+struct can_iface {
+    FDCAN_HandleTypeDef handle;
+    rcan_timing timing;
+    rcan_filter filter;
+    bool use_filter;
+};
+
+typedef struct can_iface rcan;
 
 inline bool bx_canfd_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size);
 

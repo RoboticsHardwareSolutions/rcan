@@ -5,11 +5,31 @@
 #include "rcan_filter.h"
 #include "rcan_timing.h"
 
+#define RCAN_MAX_FRAME_PAYLOAD_SIZE                    8
+
+typedef enum {
+    nonframe,
+    std_id,
+    ext_id
+} rcan_frame_type;
+
+#pragma pack(push)
+#pragma pack(1)
+
+typedef struct {
+    uint32_t id;
+    uint8_t len;
+    rcan_frame_type type;
+    bool rtr;
+    uint8_t payload[RCAN_MAX_FRAME_PAYLOAD_SIZE];
+} rcan_frame;
+
+#pragma pack(pop)
+
 
 #define RCAN_EXT_ID_MAX                      0x1FFFFFFFU
 #define RCAN_STD_ID_MAX                      0x000007FFU
 
-#define RCAN_MAX_FRAME_PAYLOAD_SIZE                    8
 
 #define SOCKET_CAN0  0x1224UL// macro for can socet can iface
 #define SOCKET_CAN1  0x1225UL
@@ -54,59 +74,20 @@
 #endif // defined(RCAN_UNIX)
 
 
-#if defined(STM32F072xB) || defined(STM32F091xC)
-
-#include "stm32f0xx_hal.h"
-
-#endif
-
-#if defined(STM32F103xB)
-
-#include "stm32f1xx_hal.h"
-
-#endif
-
-#if defined(STM32G474xx)
-
-#include "stm32g4xx_hal.h"
-
-#endif
-
-#if defined(STM32F767xx) || defined(STM32F765xx)
-
-#include "stm32f7xx_hal.h"
-
-#endif
-
 #if defined(RCAN_WINDOWS) || defined(RCAN_UNIX) || defined (RCAN_MACOS)
 
-struct can_iface {
-    uint32_t channel;
-    int fd;
-    bool opened; // FIXME real need it ?
-    rcan_filter filter;
-    bool use_filter;
-};
+#include "can.h"
+
+#elif defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || defined(STM32F103xB)
+
+#include "bx_can.h"
 
 #elif defined(STM32G474xx)
 
-struct can_iface {
-    FDCAN_HandleTypeDef handle;
-    rcan_timing timing;
-    rcan_filter filter;
-    bool use_filter;
-};
+#include "bx_canfd.h"
 
-#elif defined(STM32F072xB) || defined(STM32F091xC) || defined(STM32F103xB) || defined(STM32F767xx) || defined(STM32F765xx)
+#endif // defined(RCAN_WINDOWS) || defined(RCAN_UNIX) || defined (RCAN_MACOS)
 
-struct can_iface {
-    CAN_HandleTypeDef handle;
-    rcan_timing timing;
-    rcan_filter filter;
-    bool use_filter;
-};
-
-#endif
 
 #endif
 

@@ -8,29 +8,10 @@ extern "C" {
 
 #include "stdbool.h"
 #include "rcan_def.h"
+#include "stdint.h"
 
 #define RCAN_MAX_FRAME_PAYLOAD_SIZE                    8
 
-typedef struct can_iface rcan;
-
-typedef enum {
-    nonframe,
-    std_id,
-    ext_id
-} rcan_frame_type;
-
-#pragma pack(push)
-#pragma pack(1)
-
-typedef struct {
-    uint32_t id;
-    uint8_t len;
-    rcan_frame_type type;
-    bool rtr;
-    uint8_t payload[RCAN_MAX_FRAME_PAYLOAD_SIZE];
-} rcan_frame;
-
-#pragma pack(pop)
 
 bool rcan_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size);
 

@@ -4,6 +4,7 @@
 
 #include "bx_canfd.h"
 
+
 static bool bx_canfd_set_filter(rcan *can);
 
 static bool bx_canfd_set_timing(rcan *can, uint32_t bitrate);
