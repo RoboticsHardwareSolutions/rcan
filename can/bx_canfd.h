@@ -3,9 +3,20 @@
 
 #if defined(STM32G474xx)
 
-bool bx_canfd_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size);
+#include "stdbool.h"
+#include "stm32g4xx_hal.h"
 
-bool bx_canfd_start(rcan *can, uint32_t channel, uint32_t bitrate);
+inline bool bx_canfd_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size);
+
+inline bool bx_canfd_start(rcan *can, uint32_t channel, uint32_t bitrate);
+
+inline bool bx_canfd_is_ok(rcan *can);
+
+inline bool bx_canfd_stop(rcan *can);
+
+inline bool bx_canfd_send(rcan *can, rcan_frame *frame);
+
+inline bool bx_canfd_receive(rcan *can, rcan_frame *frame);
 
 #endif // defined(STM32G474xx)
 

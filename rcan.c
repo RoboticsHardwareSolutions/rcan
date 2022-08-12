@@ -197,23 +197,6 @@ bool rcan_receive(rcan *can, rcan_frame *frame) {
 
 }
 
-void rcan_view_frame(rcan_frame *frame) {
-
-    if (frame == NULL)
-        return;
-
-    if (frame->rtr) {
-        printf("ID : %8x | %s | RTR \n", frame->id, frame->type == std_id ? "STD" : "EXT");
-        return;
-    }
-
-    printf("ID : %8x | %s | LEN : %2d | DATA : ", frame->id, frame->type == std_id ? "STD" : "EXT", frame->len);
-    for (uint8_t i = 0; i < frame->len; i++) {
-        printf("%02x ", frame->payload[i]);
-    }
-    printf("\n");
-}
-
 /*********************************************  PCAN  *****************************************************************/
 
 static bool is_pcan_iface(uint32_t channel) {

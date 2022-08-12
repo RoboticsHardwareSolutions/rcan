@@ -1,6 +1,10 @@
+
+
 #if defined(STM32G474xx)
 
-static bool bx_canfd_set_filter(rcan *can);s
+#include "bx_canfd.h"
+
+static bool bx_canfd_set_filter(rcan *can);
 
 static bool bx_canfd_set_timing(rcan *can, uint32_t bitrate);
 
@@ -9,7 +13,7 @@ static bool bx_canfd_set_data_timing(rcan *can, uint32_t data_bitrate);
 static bool bx_canfd_make_can_tx_header(rcan_frame *frame, FDCAN_TxHeaderTypeDef *tx_header);
 
 
-bool bx_canfd_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size) {
+inline bool bx_canfd_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size) {
 
     if (can == NULL || accepted_ids == NULL || size == 0)
         return false;
@@ -20,7 +24,7 @@ bool bx_canfd_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_
 }
 
 
-bool bx_canfd_start(rcan *can, uint32_t channel, uint32_t bitrate) {
+inline bool bx_canfd_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 
     //TODO create function of convert all baudrate to standart.
     if (can == NULL || channel == 0 || bitrate == 0)
@@ -58,7 +62,7 @@ bool bx_canfd_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 
 }
 
-bool bx_canfd_is_ok(rcan *can) {
+inline bool bx_canfd_is_ok(rcan *can) {
 
     if (HAL_FDCAN_GetError(&can->handle) != HAL_FDCAN_ERROR_NONE)
         return false;
@@ -95,7 +99,7 @@ bool bx_canfd_is_ok(rcan *can) {
 }
 
 
-bool bx_canfd_stop(rcan *can) {
+inline bool bx_canfd_stop(rcan *can) {
 
     if (HAL_OK != HAL_FDCAN_AbortTxRequest(
             &can->handle,
@@ -113,7 +117,7 @@ bool bx_canfd_stop(rcan *can) {
 }
 
 
-bool bx_canfd_send(rcan *can, rcan_frame *frame) {
+inline bool bx_canfd_send(rcan *can, rcan_frame *frame) {
 
     if (can == NULL ||
         frame == NULL ||
@@ -134,7 +138,7 @@ bool bx_canfd_send(rcan *can, rcan_frame *frame) {
 }
 
 
-bool bx_canfd_receive(rcan *can, rcan_frame *frame) {
+inline bool bx_canfd_receive(rcan *can, rcan_frame *frame) {
     if (can == NULL || frame == NULL || frame->payload == NULL)
         return false;
 
@@ -207,7 +211,7 @@ static bool bx_canfd_set_timing(rcan *can, uint32_t bitrate) {
 }
 
 
-static bool rcan_set_data_timing(rcan *can, uint32_t data_bitrate) {
+static bool bx_canfd_set_data_timing(rcan *can, uint32_t data_bitrate) {
     // TODO in future add support can FD check recomended CAN open speeds
     can->handle.Init.DataPrescaler = 1;
     can->handle.Init.DataSyncJumpWidth = 1;
@@ -216,7 +220,7 @@ static bool rcan_set_data_timing(rcan *can, uint32_t data_bitrate) {
     return true;
 }
 
-static bool rcan_make_can_tx_header(rcan_frame *frame, FDCAN_TxHeaderTypeDef *tx_header) {
+static bool bx_canfd_make_can_tx_header(rcan_frame *frame, FDCAN_TxHeaderTypeDef *tx_header) {
 
     if (frame->type == std_id) {
 
