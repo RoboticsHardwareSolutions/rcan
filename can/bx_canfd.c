@@ -45,17 +45,17 @@ inline bool bx_canfd_start(rcan *can, uint32_t channel, uint32_t bitrate) {
     can->handle.Init.ExtFiltersNbr = 1;
     can->handle.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
 
-    if (!rcan_set_timing(can, bitrate))
+    if (!bx_canfd_set_timing(can, bitrate))
         return false;
 
-    if (!rcan_set_data_timing(can, 0)) // FIXME data_bitrate
+    if (!bx_canfd_set_data_timing(can, 0)) // FIXME data_bitrate
         return false;
 
     if (HAL_FDCAN_Init(&can->handle) != HAL_OK)
         return false;
 
     if (can->use_filter) {
-        if (!rcan_set_filter(can))
+        if (!bx_canfd_set_filter(can))
             return false;
     }
 
@@ -132,7 +132,7 @@ inline bool bx_canfd_send(rcan *can, rcan_frame *frame) {
 
     FDCAN_TxHeaderTypeDef tx_header = {0};
 
-    if (!rcan_make_can_tx_header(frame, &tx_header))
+    if (!bx_canfd_make_can_tx_header(frame, &tx_header))
         return false;
 
     return HAL_FDCAN_AddMessageToTxFifoQ(&can->handle, &tx_header, frame->payload) == HAL_OK;
@@ -201,7 +201,7 @@ static bool bx_canfd_set_timing(rcan *can, uint32_t bitrate) {
     //TODO add  uint32_t clock = HAL_RCC_GetPCLK1Freq();
     uint32_t clock = SystemCoreClock;
     //TODO add Divider + convert DIV to value real
-    if (!bx_canfd_calculate_timing(clock, bitrate, &can->timing))
+    if (!rcan_calculate_timing(clock, bitrate, &can->timing))
         return false;
 
     can->handle.Init.NominalPrescaler = can->timing.bit_rate_prescaler;
