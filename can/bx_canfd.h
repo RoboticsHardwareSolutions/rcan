@@ -5,6 +5,7 @@
 
 #include "stdbool.h"
 #include "stm32g4xx_hal.h"
+#include "rcan_def.h"
 
 inline bool bx_canfd_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size);
 

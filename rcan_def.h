@@ -6,6 +6,11 @@
 #include "rcan_timing.h"
 
 
+#define RCAN_EXT_ID_MAX                      0x1FFFFFFFU
+#define RCAN_STD_ID_MAX                      0x000007FFU
+
+#define RCAN_MAX_FRAME_PAYLOAD_SIZE                    8
+
 #define SOCKET_CAN0  0x1224UL// macro for can socet can iface
 #define SOCKET_CAN1  0x1225UL
 #define SOCKET_CAN2  0x1226UL
@@ -17,16 +22,16 @@
 
 #if defined(RCAN_MACOS)
 
-
 #include "PCBUSB.h"
 
 #define PCAN_PCIBUS1 0
 #define PCAN_PCIBUS2 0
 #define PCAN_PCIBUS3 0
 
-#endif
+#endif // defined(RCAN_MACOS)
 
 #if defined(RCAN_UNIX)
+
 #include "PCANBasic.h"
 #include <net/if.h>
 #include <sys/ioctl.h>
@@ -39,30 +44,38 @@
 #include <libsocketcan.h>
 #include <fcntl.h>
 
-
-
-#endif
+#endif // defined(RCAN_UNIX)
 
 #if defined(RCAN_WINDOWS)
+
 #include "windows.h"
 #include "PCANBasic.h"
-#endif
+
+#endif // defined(RCAN_UNIX)
 
 
 #if defined(STM32F072xB) || defined(STM32F091xC)
+
 #include "stm32f0xx_hal.h"
+
 #endif
 
 #if defined(STM32F103xB)
+
 #include "stm32f1xx_hal.h"
+
 #endif
 
 #if defined(STM32G474xx)
+
 #include "stm32g4xx_hal.h"
+
 #endif
 
 #if defined(STM32F767xx) || defined(STM32F765xx)
+
 #include "stm32f7xx_hal.h"
+
 #endif
 
 #if defined(RCAN_WINDOWS) || defined(RCAN_UNIX) || defined (RCAN_MACOS)
