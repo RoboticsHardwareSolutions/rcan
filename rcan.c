@@ -531,9 +531,8 @@ static bool pcan_read(rcan *can, rcan_frame *frame) {
 
     if (status & PCAN_ERROR_QRCVEMPTY)
         return false;
-    else if (status != PCAN_ERROR_OK || message.MSGTYPE & PCAN_MESSAGE_STATUS)
+    if (status != PCAN_ERROR_OK || message.MSGTYPE & PCAN_MESSAGE_STATUS)
         return false;
-
 
     // TODO read error message after you must return false
 
