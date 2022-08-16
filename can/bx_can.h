@@ -43,6 +43,8 @@ bool bx_can_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t 
 
 bool bx_can_start(rcan *can, uint32_t channel, uint32_t bitrate);
 
+bool bx_can_stop(rcan *can);
+
 bool bx_can_is_ok(rcan *can);
 
 bool bx_can_send(rcan *can, rcan_frame *frame);

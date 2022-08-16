@@ -88,7 +88,7 @@ typedef struct {
 
 #include "bx_canfd.h"
 
-#endif // defined(RCAN_WINDOWS) || defined(RCAN_UNIX) || defined (RCAN_MACOS)
+#endif
 
 
 #endif // __RCAN_DEF_H
