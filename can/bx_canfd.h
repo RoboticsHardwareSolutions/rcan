@@ -9,8 +9,6 @@
 #include "rcan.h"
 #include "rcan_filter.h"
 
-
-
 #if defined(STM32G474xx)
 
 #include "stm32g4xx_hal.h"

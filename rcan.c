@@ -1,5 +1,6 @@
 #include "rcan.h"
 #include "stdio.h"
+#include "stdint.h"
 
 
 bool rcan_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size){
