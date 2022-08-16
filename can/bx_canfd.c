@@ -14,23 +14,16 @@ static bool bx_canfd_set_data_timing(rcan *can, uint32_t data_bitrate);
 static bool bx_canfd_make_can_tx_header(rcan_frame *frame, FDCAN_TxHeaderTypeDef *tx_header);
 
 
-inline bool bx_canfd_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size) {
-
-    if (can == NULL || accepted_ids == NULL || size == 0)
-        return false;
-
+bool bx_canfd_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size) {
     can->use_filter = true;
     return rcan_filter_calculate(accepted_ids, size, &can->filter);
 
 }
 
 
-inline bool bx_canfd_start(rcan *can, uint32_t channel, uint32_t bitrate) {
+bool bx_canfd_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 
     //TODO create function of convert all baudrate to standart.
-    if (can == NULL || channel == 0 || bitrate == 0)
-        return false;
-
 
     can->handle.Instance = (FDCAN_GlobalTypeDef *) channel;
     can->handle.Init.ClockDivider = FDCAN_CLOCK_DIV1;
@@ -63,7 +56,7 @@ inline bool bx_canfd_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 
 }
 
-inline bool bx_canfd_is_ok(rcan *can) {
+bool bx_canfd_is_ok(rcan *can) {
 
     if (HAL_FDCAN_GetError(&can->handle) != HAL_FDCAN_ERROR_NONE)
         return false;
@@ -100,7 +93,7 @@ inline bool bx_canfd_is_ok(rcan *can) {
 }
 
 
-inline bool bx_canfd_stop(rcan *can) {
+bool bx_canfd_stop(rcan *can) {
 
     if (HAL_OK != HAL_FDCAN_AbortTxRequest(
             &can->handle,
@@ -118,7 +111,7 @@ inline bool bx_canfd_stop(rcan *can) {
 }
 
 
-inline bool bx_canfd_send(rcan *can, rcan_frame *frame) {
+bool bx_canfd_send(rcan *can, rcan_frame *frame) {
 
     if (can == NULL ||
         frame == NULL ||
@@ -139,7 +132,7 @@ inline bool bx_canfd_send(rcan *can, rcan_frame *frame) {
 }
 
 
-inline bool bx_canfd_receive(rcan *can, rcan_frame *frame) {
+bool bx_canfd_receive(rcan *can, rcan_frame *frame) {
     if (can == NULL || frame == NULL || frame->payload == NULL)
         return false;
 

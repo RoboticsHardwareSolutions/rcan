@@ -1,5 +1,5 @@
-#ifndef __DEFINES_H
-#define __DEFINES_H
+#ifndef __RCAN_DEF_H
+#define __RCAN_DEF_H
 
 
 #include "rcan_filter.h"
@@ -43,10 +43,12 @@ typedef struct {
 #if defined(RCAN_MACOS)
 
 #include "PCBUSB.h"
+#include "u_can.h"
 
 #define PCAN_PCIBUS1 0
 #define PCAN_PCIBUS2 0
 #define PCAN_PCIBUS3 0
+
 
 #endif // defined(RCAN_MACOS)
 
@@ -58,11 +60,11 @@ typedef struct {
 #include <sys/socket.h>
 #include <unistd.h>
 #include "stdlib.h"
-
 #include <linux/can.h>
 #include <linux/can/raw.h>
 #include <libsocketcan.h>
 #include <fcntl.h>
+#include "u_can.h"
 
 #endif // defined(RCAN_UNIX)
 
@@ -70,26 +72,26 @@ typedef struct {
 
 #include "windows.h"
 #include "PCANBasic.h"
+#include "u_can.h"
 
 #endif // defined(RCAN_UNIX)
 
 
-#if defined(RCAN_WINDOWS) || defined(RCAN_UNIX) || defined (RCAN_MACOS)
-
-#include "can.h"
-
-#elif defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || defined(STM32F103xB)
+#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || defined(STM32F103xB)
 
 #include "bx_can.h"
 
-#elif defined(STM32G474xx)
+#endif //defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || defined(STM32F103xB)
+
+
+#if defined(STM32G474xx)
 
 #include "bx_canfd.h"
 
 #endif // defined(RCAN_WINDOWS) || defined(RCAN_UNIX) || defined (RCAN_MACOS)
 
 
-#endif
+#endif // __RCAN_DEF_H
 
 
 

@@ -10,8 +10,8 @@ extern "C" {
 #include "rcan_def.h"
 #include "stdint.h"
 
-#define RCAN_MAX_FRAME_PAYLOAD_SIZE                    8
 
+typedef struct can_iface rcan;
 
 bool rcan_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size);
 

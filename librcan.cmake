@@ -32,7 +32,8 @@ set(RCAN_EXECUTABLE_FILES
         rcan/rcan_filter.c
         rcan/rcan_timing.c
         rcan/can/bx_can.c
-        rcan/can/bx_canfd.c)
+        rcan/can/bx_canfd.c
+        rcan/can/u_can.c)
 
 
 

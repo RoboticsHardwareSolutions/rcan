@@ -51,4 +51,5 @@ bool bx_can_receive(rcan *can, rcan_frame *frame);
 
 #endif //defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || defined(STM32F103xB)
 
+
 #endif //__BX_CAN_H_

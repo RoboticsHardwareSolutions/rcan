@@ -12,10 +12,6 @@ static bool st_prop_bs1_and_bs2_convert(rcan_timing *source, rcan_timing *result
 static bool bx_can_make_can_tx_header(rcan_frame *frame, CAN_TxHeaderTypeDef *tx_header);
 
 bool bx_can_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size) {
-
-    if (can == NULL || accepted_ids == NULL || size == 0)
-        return false;
-
     can->use_filter = true;
     return rcan_filter_calculate(accepted_ids, size, &can->filter);
 
@@ -23,9 +19,6 @@ bool bx_can_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t 
 
 
 bool bx_can_start(rcan *can, uint32_t channel, uint32_t bitrate) {
-
-    if (can == NULL || channel == 0 || bitrate == 0)
-        return false;
 
     can->handle.Instance = (CAN_TypeDef *) channel;
     can->handle.Init.Mode = CAN_MODE_NORMAL;
