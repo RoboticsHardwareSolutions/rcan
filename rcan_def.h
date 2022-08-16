@@ -55,6 +55,7 @@ typedef struct {
 #if defined(RCAN_UNIX)
 
 #include "PCANBasic.h"
+#include "u_can.h"
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -64,7 +65,7 @@ typedef struct {
 #include <linux/can/raw.h>
 #include <libsocketcan.h>
 #include <fcntl.h>
-#include "u_can.h"
+
 
 #endif // defined(RCAN_UNIX)
 

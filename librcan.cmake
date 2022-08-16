@@ -26,7 +26,8 @@ if (UNIX AND NOT APPLE)
     set(RCAN_LIBRARIES ${RCAN_LIBRARIES} socketcan)
 endif ()
 
-set(RCAN_DIRECTORIES ${RCAN_DIRECTORIES} rcan rcan/can)
+set(RCAN_DIRECTORIES ${RCAN_DIRECTORIES} rcan/can)
+set(RCAN_DIRECTORIES ${RCAN_DIRECTORIES} rcan )
 set(RCAN_EXECUTABLE_FILES
         rcan/rcan.c
         rcan/rcan_filter.c
