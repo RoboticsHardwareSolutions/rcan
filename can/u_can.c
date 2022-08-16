@@ -1,7 +1,7 @@
-#include "u_can.h"
 
 #if defined(RCAN_WINDOWS) || defined (RCAN_MACOS) || defined (RCAN_UNIX)
 
+#include "u_can.h"
 #include "stdio.h"
 #include "string.h"
 
