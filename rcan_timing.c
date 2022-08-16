@@ -1,11 +1,8 @@
 #include "rcan_timing.h"
 #include "string.h"
 
-
-bool rcan_calculate_timing(uint32_t peripheral_clock_rate,
-                           uint32_t target_bitrate,
-                           rcan_timing *out_timings) {
-
+bool rcan_calculate_timing(uint32_t peripheral_clock_rate, uint32_t target_bitrate, rcan_timing* out_timings)
+{
     if (target_bitrate == 0 || peripheral_clock_rate == 0 || out_timings == NULL || target_bitrate < 1000)
         return false;
 
@@ -51,10 +48,10 @@ bool rcan_calculate_timing(uint32_t peripheral_clock_rate,
      * Searching for such prescaler value so that the number of quanta per bit is highest.
      */
 
-    uint8_t bs1_bs2_sum = (uint8_t) (max_quanta_per_bit - 1);    // NOLINT
+    uint8_t bs1_bs2_sum = (uint8_t) (max_quanta_per_bit - 1);  // NOLINT
 
-    while ((prescaler_bs % (1U + bs1_bs2_sum)) != 0) {
-
+    while ((prescaler_bs % (1U + bs1_bs2_sum)) != 0)
+    {
         if (bs1_bs2_sum <= 2)
             return false;
 
@@ -65,7 +62,6 @@ bool rcan_calculate_timing(uint32_t peripheral_clock_rate,
 
     if ((prescaler < 1U) || (prescaler > 1024U))
         return false;
-
 
     /**
      * Now we have a constraint: (BS1 + BS2) == bs1_bs2_sum.
@@ -87,32 +83,29 @@ bool rcan_calculate_timing(uint32_t peripheral_clock_rate,
      *   - With rounding to zero
      */
 
-    uint8_t bs1 = (uint8_t) (((7 * bs1_bs2_sum - 1) + 4) / 8);       // Trying rounding to nearest first
+    uint8_t bs1 = (uint8_t) (((7 * bs1_bs2_sum - 1) + 4) / 8);  // Trying rounding to nearest first
     uint8_t bs2 = (uint8_t) (bs1_bs2_sum - bs1);
-
 
     if (!(bs1_bs2_sum > bs1))
         return false;
 
     uint16_t sample_point_permill = (uint16_t) (1000U * (1U + bs1) / (1U + bs1 + bs2));
 
-
-    if (sample_point_permill > max_sample_point_location_permill) {
-        bs1 = (uint8_t) ((7 * bs1_bs2_sum - 1) / 8);   // Nope, too far; now rounding to zero
+    if (sample_point_permill > max_sample_point_location_permill)
+    {
+        bs1 = (uint8_t) ((7 * bs1_bs2_sum - 1) / 8);  // Nope, too far; now rounding to zero
         bs2 = (uint8_t) (bs1_bs2_sum - bs1);
     }
 
     bool valid = (bs1 >= 1) && (bs1 <= max_bs1) && (bs2 >= 1) && (bs2 <= max_bs2);
 
     if ((target_bitrate != (peripheral_clock_rate / (prescaler * (1U + bs1 + bs2)))) || !valid)
-        return false; //This actually means that the algorithm has a logic error
+        return false;  // This actually means that the algorithm has a logic error
 
-    out_timings->bit_rate_prescaler = (uint16_t) prescaler;
-    out_timings->max_resynchronization_jump_width = 1;      // One is recommended by CANOpen, and DeviceNet
-    out_timings->bit_segment_1 = bs1;
-    out_timings->bit_segment_2 = bs2;
+    out_timings->bit_rate_prescaler               = (uint16_t) prescaler;
+    out_timings->max_resynchronization_jump_width = 1;  // One is recommended by CANOpen, and DeviceNet
+    out_timings->bit_segment_1                    = bs1;
+    out_timings->bit_segment_2                    = bs2;
 
     return true;
 }
-
-

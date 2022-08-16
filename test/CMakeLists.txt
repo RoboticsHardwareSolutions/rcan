@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.10)
 project(rcan_test C CXX)
 enable_testing()
 
@@ -31,7 +31,7 @@ endif ()
 set(CMAKE_CXX_STANDARD 17)
 set(CXX_EXTENSIONS OFF)
 
-include(../librcan.cmake)
+#include(librcan.cmake)
 
 add_compile_options(
         -Wall -Wextra -Werror -pedantic -fstrict-aliasing -Wdouble-promotion -Wswitch-enum -Wfloat-equal -Wundef
