@@ -6,6 +6,7 @@
 #include "stdbool.h"
 #include "rcan_def.h"
 #include "rcan_timing.h"
+#include "rcan.h"
 #include "rcan_filter.h"
 
 
