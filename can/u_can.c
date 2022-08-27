@@ -32,6 +32,8 @@ static bool pcan_read(rcan *can, rcan_frame *frame);
 
 static bool pcan_write(rcan *can, rcan_frame *frame);
 
+static uint32_t convert_to_pcan_bitrate(uint32_t bitrate);
+
 
 bool u_can_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size) {
 
@@ -44,31 +46,40 @@ bool u_can_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t s
 bool u_can_start(rcan *can, uint32_t channel, uint32_t bitrate) {
     //TODO create function of convert all baudrate to standart.
 
-    if (can->opened)
+    if (can->opened || channel == 0)
         return false;
 
     bool success = false;
 
+
 #if defined(RCAN_WINDOWS) || defined (RCAN_MACOS)
 
-    success = pcan_start(can, channel, bitrate);
+    if (!is_correct_bitrate_for_pcan(bitrate))
+        return false;
 
-#endif
+    uint32_t pcan_bitrate = convert_to_pcan_bitrate(bitrate);
+
+    success = pcan_start(can, channel, pcan_bitrate);
+
+
+#endif // defined(RCAN_WINDOWS) || defined (RCAN_MACOS)
+
 
 #if defined(RCAN_UNIX)
-    if (channel == 0)
-        return false;
 
     if (is_pcan_iface(channel)) {
 
-        if (!is_correct_bitrate_for_pcan(bitrate))
-            return false;
-        success = pcan_start(can, channel, bitrate);
+           if (!is_correct_bitrate_for_pcan(bitrate))
+               return false;
 
-    } else if (is_socket_can_iface(channel))
-        success = socket_can_start(can, channel, bitrate);
+            uint32_t pcan_bitrate = convert_to_pcan_bitrate(bitrate);
 
-#endif
+           success = pcan_start(can, channel, pcan_bitrate);
+
+       } else if (is_socket_can_iface(channel))
+           success = socket_can_start(can, channel, bitrate);
+
+#endif // defined(RCAN_UNIX)
 
     if (!success)
         return false;
@@ -201,6 +212,43 @@ static bool is_correct_bitrate_for_pcan(uint32_t bitrate) {
         return true;
 
     return false;
+}
+
+
+static uint32_t convert_to_pcan_bitrate(uint32_t bitrate) {
+
+    switch (bitrate) {
+        case 1000000:
+            return PCAN_BAUD_1M;
+        case 800000:
+            return PCAN_BAUD_800K;
+        case 500000:
+            return PCAN_BAUD_500K;
+        case 250000:
+            return PCAN_BAUD_250K;
+        case 125000:
+            return PCAN_BAUD_125K;
+        case 100000:
+            return PCAN_BAUD_100K;
+        case 95000:
+            return PCAN_BAUD_95K;
+        case 83000:
+            return PCAN_BAUD_83K;
+        case 50000:
+            return PCAN_BAUD_50K;
+        case 47000:
+            return PCAN_BAUD_47K;
+        case 33000:
+            return PCAN_BAUD_33K;
+        case 20000:
+            return PCAN_BAUD_20K;
+        case 10000:
+            return PCAN_BAUD_10K;
+        case 5000:
+            return PCAN_BAUD_5K;
+        default:
+            return 0;
+    }
 }
 
 static bool pcan_start(rcan *can, uint32_t channel, uint32_t bitrate) {
