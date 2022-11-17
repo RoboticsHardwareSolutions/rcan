@@ -117,11 +117,11 @@ void rcan_view_frame(rcan_frame* frame)
 
     if (frame->rtr)
     {
-        printf("ID : %8lx RTR ", frame->id);
+        printf("ID : %8x RTR ", frame->id);
         return;
     }
 
-    printf("ID : %8lx | %s | LEN : %2d | DATA : ", frame->id, frame->type == std_id ? "STD" : "EXT", frame->len);
+    printf("ID : %8x | %s | LEN : %2d | DATA : ", frame->id, frame->type == std_id ? "STD" : "EXT", frame->len);
     for (uint8_t i = 0; i < frame->len; i++)
     {
         printf("%02x ", frame->payload[i]);
