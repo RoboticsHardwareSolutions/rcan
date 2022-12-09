@@ -1,5 +1,5 @@
-#ifndef __RCAN_DEF_H
-#define __RCAN_DEF_H
+#ifndef __RCAN_DEF_H__
+#define __RCAN_DEF_H__
 
 #include "rcan_filter.h"
 #include "rcan_timing.h"

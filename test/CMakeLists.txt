@@ -3,7 +3,10 @@ project(rcan_test C CXX)
 enable_testing()
 
 set(CTEST_OUTPUT_ON_FAILURE ON)
-set(library_dir "${CMAKE_SOURCE_DIR}/../")
+set(library_dir1 "${CMAKE_CURRENT_LIST_DIR}/../")
+set(library_dir2 "${CMAKE_CURRENT_LIST_DIR}/../can/")
+set(library_dir3 "${CMAKE_CURRENT_LIST_DIR}/../thirdparty/PCAN-Basic-linux/")
+set(library_dir4 "${CMAKE_CURRENT_LIST_DIR}/../thirdparty/PCAN-Basic-mac/")
 
 # Use -DNO_STATIC_ANALYSIS=1 to suppress static analysis.
 # If not suppressed, the tools used here shall be available, otherwise the build will fail.
@@ -23,7 +26,7 @@ find_program(clang_format NAMES clang-format)
 if (NOT clang_format)
     message(STATUS "Could not locate clang-format")
 else ()
-    file(GLOB format_files ${library_dir}/*.[ch] ${CMAKE_SOURCE_DIR}/*.[ch]pp ${CMAKE_SOURCE_DIR}/*.[ch])
+    file(GLOB format_files ${library_dir1}/*.[ch] ${library_dir2}/*.[ch]  ${CMAKE_SOURCE_DIR}/*.[ch]pp ${CMAKE_SOURCE_DIR}/*.[ch])
     message(STATUS "Using clang-format: ${clang_format}; files: ${format_files}")
     add_custom_target(format COMMAND ${clang_format} -i -fallback-style=none -style=file --verbose ${format_files})
 endif ()
@@ -31,7 +34,7 @@ endif ()
 set(CMAKE_CXX_STANDARD 17)
 set(CXX_EXTENSIONS OFF)
 
-#include(librcan.cmake)
+
 
 add_compile_options(
         -Wall -Wextra -Werror -pedantic -fstrict-aliasing -Wdouble-promotion -Wswitch-enum -Wfloat-equal -Wundef
@@ -39,11 +42,11 @@ add_compile_options(
 )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Woverloaded-virtual -Wnon-virtual-dtor -Wsign-promo")
 
-include_directories(catch ${library_dir})
+include_directories(catch ${library_dir1} ${library_dir2} ${library_dir3} ${library_dir4})
 add_definitions(-DCATCH_CONFIG_FAST_COMPILE=1 -DCATCH_CONFIG_ENABLE_ALL_STRINGMAKERS=1)
 add_definitions(-DRCAN_MACOS)
 
-set(common_sources tests.cpp ${library_dir}/rcan.c)
+set(common_sources tests.cpp ${CMAKE_CURRENT_LIST_DIR}/../rcan.c ${CMAKE_CURRENT_LIST_DIR}/../can/u_can.c)
 
 function(gen_test name files compile_definitions compile_flags link_flags c_standard)
     add_executable(${name} ${common_sources} ${files})
@@ -80,3 +83,7 @@ gen_test_matrix(test_public
         ""
         "-Wmissing-declarations")
 
+message(" dir 1 ${library_dir1}")
+message(" dir 2 ${library_dir2}")
+message(" dir 3 ${library_dir3}")
+message(" dir 4 ${library_dir4}")
