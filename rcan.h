@@ -1,5 +1,5 @@
-#ifndef __RCAN_H
-#define __RCAN_H
+#ifndef __RCAN_H__
+#define __RCAN_H__
 
 #ifdef __cplusplus
 extern "C" {

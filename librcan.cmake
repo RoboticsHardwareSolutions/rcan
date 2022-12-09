@@ -1,7 +1,3 @@
-message("Hello from rcan!")
-message("Full path to module: ${CMAKE_CURRENT_LIST_FILE}")
-message("Module located in directory: ${CMAKE_CURRENT_LIST_DIR}")
-
 if (MSVC OR MSYS OR MINGW)
     set(RCAN_DIRECTORIES ${CMAKE_CURRENT_LIST_DIR}/thirdparty/PCAN-Basic-windows)
     link_directories(${RCAN_DIRECTORIES})
@@ -14,7 +10,7 @@ if (MSVC OR MSYS OR MINGW)
 endif ()
 
 if (APPLE)
-    set(RCAN_DIRECTORIES rcan/thirdparty/PCAN-Basic-mac)
+    set(RCAN_DIRECTORIES ${CMAKE_CURRENT_LIST_DIR}/thirdparty/PCAN-Basic-mac)
     find_library(PCAN_LIBRARIES NAMES pcbusb)
     add_definitions(-DRCAN_MACOS)
     set(RCAN_LIBRARIES "${PCAN_LIBRARIES}")
@@ -22,16 +18,16 @@ endif ()
 
 
 if (UNIX AND NOT APPLE)
-    set(RCAN_DIRECTORIES rcan/thirdparty/PCAN-Basic-linux)
-    link_directories(thirdparty/PCAN-Basic-linux)
+    set(RCAN_DIRECTORIES ${CMAKE_CURRENT_LIST_DIR}/thirdparty/PCAN-Basic-linux)
+    link_directories(${CMAKE_CURRENT_LIST_DIR}/thirdparty/PCAN-Basic-linux)
     set(PCBUSB_LIBRARIES pcanbasic)
     add_definitions(-DRCAN_UNIX)
-    set(RCAN_LIBRARIES "${PCBUSB_LIBRARIES}")
+    set(RCAN_LIBRARIES ${PCBUSB_LIBRARIES})
     set(RCAN_LIBRARIES ${RCAN_LIBRARIES} socketcan)
 endif ()
 
-set(RCAN_DIRECTORIES ${RCAN_DIRECTORIES} ${CMAKE_CURRENT_LIST_DIR} ${CMAKE_CURRENT_LIST_DIR}/can)
-# set(RCAN_DIRECTORIES ${RCAN_DIRECTORIES}  ${CMAKE_CURRENT_LIST_DIR})
+set(RCAN_DIRECTORIES ${RCAN_DIRECTORIES}  ${CMAKE_CURRENT_LIST_DIR})
+set(RCAN_DIRECTORIES ${RCAN_DIRECTORIES}  ${CMAKE_CURRENT_LIST_DIR}/can )
 set(RCAN_EXECUTABLE_FILES
         ${CMAKE_CURRENT_LIST_DIR}/rcan.c
         ${CMAKE_CURRENT_LIST_DIR}/rcan_filter.c
@@ -39,7 +35,6 @@ set(RCAN_EXECUTABLE_FILES
         ${CMAKE_CURRENT_LIST_DIR}/can/bx_can.c
         ${CMAKE_CURRENT_LIST_DIR}/can/bx_canfd.c
         ${CMAKE_CURRENT_LIST_DIR}/can/u_can.c)
-
 
 
 

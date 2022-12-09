@@ -51,7 +51,6 @@ typedef struct
 
 #if defined(RCAN_UNIX)
 
-#    include "PCANBasic.h"
 #    include "u_can.h"
 #    include <net/if.h>
 #    include <sys/ioctl.h>
@@ -62,6 +61,7 @@ typedef struct
 #    include <linux/can/raw.h>
 #    include <libsocketcan.h>
 #    include <fcntl.h>
+#    include <PCANBasic.h>
 
 #endif  // defined(RCAN_UNIX)
 
