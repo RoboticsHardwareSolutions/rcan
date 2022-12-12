@@ -44,7 +44,7 @@ bool u_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
 {
     // TODO create function of convert all baudrate to standart.
 
-    if (can->opened || channel == 0)
+    if (can->opened)
         return false;
 
     bool success = false;
