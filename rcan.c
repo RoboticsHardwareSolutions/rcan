@@ -66,7 +66,7 @@ bool rcan_stop(rcan* can)
         return false;
 
 #if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
-    return rcan_stop(can);
+    return u_can_stop(can);
 #endif
 
 #if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || defined(STM32F103xB)

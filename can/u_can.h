@@ -29,4 +29,6 @@ bool u_can_send(rcan* can, rcan_frame* frame);
 
 bool u_can_receive(rcan* can, rcan_frame* frame);
 
+bool u_can_stop(rcan* can);
+
 #endif  // defined(RCAN_UNIX) || defined(RCAN_MACOS) || defined(RCAN_WINDOWS)
