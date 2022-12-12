@@ -6,8 +6,8 @@ extern "C" {
 #endif
 
 #include "stdbool.h"
-#include "rcan_def.h"
 #include "stdint.h"
+#include "rcan_def.h"
 
 typedef struct can_iface rcan;
 

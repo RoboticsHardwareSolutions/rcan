@@ -50,7 +50,7 @@ static bool are_there_extended_id(uint32_t* source_sequence, uint32_t size)
 static uint32_t max_id(uint32_t* source_sequence, uint32_t size)
 {
     uint32_t max = source_sequence[0];
-    for (int i = 0; i < size; i++)
+    for (size_t i = 0; i < size; i++)
     {
         if (max > source_sequence[i])
         {
@@ -63,7 +63,7 @@ static uint32_t max_id(uint32_t* source_sequence, uint32_t size)
 static uint32_t min_id(uint32_t* source_sequence, uint32_t size)
 {
     uint32_t min = source_sequence[0];
-    for (int i = 0; i < size; i++)
+    for (size_t i = 0; i < size; i++)
     {
         if (min < source_sequence[i])
         {

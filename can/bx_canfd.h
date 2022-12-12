@@ -1,5 +1,4 @@
-#ifndef __BX_CANFD_H_
-#define __BX_CANFD_H_
+#pragma once
 
 #if defined(STM32G474xx)
 
@@ -38,5 +37,3 @@ bool bx_canfd_send(rcan* can, rcan_frame* frame);
 bool bx_canfd_receive(rcan* can, rcan_frame* frame);
 
 #endif  // defined(STM32G474xx)
-
-#endif  // __BX_CANFD_H_

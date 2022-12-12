@@ -19,9 +19,9 @@ static bool socet_can_read(rcan* can, rcan_frame* frame);
 
 static bool socet_can_write(rcan* can, rcan_frame* frame);
 
-#    endif  // #endif  defined(RCAN_UNIX)
-
 static bool is_pcan_iface(uint32_t channel);
+
+#    endif  // #endif  defined(RCAN_UNIX)
 
 static bool is_correct_bitrate_for_pcan(uint32_t bitrate);
 
@@ -105,7 +105,7 @@ bool u_can_is_ok(rcan* can)
 
 #    if defined(RCAN_WINDOWS) || defined(RCAN_MACOS)
 
-    return CAN_GetValue(can->channel, PCAN_RECEIVE_EVENT, &can->fd, sizeof(int)) == PCAN_ERROR_OK;
+    return CAN_GetValue((unsigned short) can->channel, PCAN_RECEIVE_EVENT, &can->fd, sizeof(int)) == PCAN_ERROR_OK;
 
 #    endif
 }
@@ -117,7 +117,7 @@ bool u_can_stop(rcan* can)
 
 #    if defined(RCAN_WINDOWS) || defined(RCAN_MACOS)
 
-    CAN_Uninitialize(can->channel);
+    CAN_Uninitialize((unsigned short) can->channel);
 
 #    endif
 
@@ -184,17 +184,17 @@ bool u_can_receive(rcan* can, rcan_frame* frame)
 }
 
 /*********************************************  PCAN  *****************************************************************/
+#    if defined(RCAN_UNIX)
 
 static bool is_pcan_iface(uint32_t channel)
 {
-#    if defined(RCAN_UNIX)
     if (channel == PCAN_USBBUS1 || channel == PCAN_USBBUS2 || channel == PCAN_USBBUS3 || channel == PCAN_PCIBUS1 ||
         channel == PCAN_PCIBUS2 || channel == PCAN_PCIBUS3)
         return true;
-#    endif
-
-    return false;
+    else
+        return false;
 }
+#    endif
 
 static bool is_correct_bitrate_for_pcan(uint32_t bitrate)
 {
@@ -250,11 +250,11 @@ static bool pcan_start(rcan* can, uint32_t channel, uint32_t bitrate)
     // TODO add  filter configuration
     TPCANStatus status;
 
-    status = CAN_Initialize(channel, bitrate, 0, 0, 0);
+    status = CAN_Initialize((unsigned short) channel, (unsigned short) bitrate, 0, 0, 0);
     if (status != PCAN_ERROR_OK)
         return false;
 
-    status = CAN_GetValue(channel, PCAN_RECEIVE_EVENT, &can->fd, sizeof(int));
+    status = CAN_GetValue((unsigned short) channel, PCAN_RECEIVE_EVENT, &can->fd, sizeof(int));
     if (status != PCAN_ERROR_OK)
         return false;
 
@@ -266,7 +266,7 @@ static bool pcan_read(rcan* can, rcan_frame* frame)
     TPCANMsg    message = {0};
     TPCANStatus status;
 
-    status = CAN_Read(can->channel, &message, NULL);
+    status = CAN_Read((unsigned short) can->channel, &message, NULL);
 
     if (status & PCAN_ERROR_QRCVEMPTY)
         return false;
@@ -318,7 +318,7 @@ static bool pcan_write(rcan* can, rcan_frame* frame)
     else
         memcpy(message.DATA, frame->payload, frame->len);
 
-    return CAN_Write(can->channel, &message) == PCAN_ERROR_OK ? true : false;
+    return CAN_Write((unsigned short) can->channel, &message) == PCAN_ERROR_OK ? true : false;
 }
 
 /***************************************  SOCET CAN   *****************************************************************/

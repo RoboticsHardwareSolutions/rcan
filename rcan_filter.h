@@ -1,5 +1,4 @@
-#ifndef __RCAN_FILTER_H
-#define __RCAN_FILTER_H
+#pragma once
 
 #include "stdbool.h"
 #include "stdint.h"
@@ -62,5 +61,3 @@ typedef struct
 } rcan_filter;
 
 bool rcan_filter_calculate(uint32_t* source_sequence, uint32_t size, rcan_filter* filter);
-
-#endif

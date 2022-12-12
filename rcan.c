@@ -2,6 +2,10 @@
 #include "stdio.h"
 #include "stdint.h"
 
+#include "u_can.h"
+#include "bx_can.h"
+#include "bx_canfd.h"
+
 bool rcan_filter_preconfiguration(rcan* can, uint32_t* accepted_ids, uint32_t size)
 {
     if (can == NULL || accepted_ids == NULL || size == 0)

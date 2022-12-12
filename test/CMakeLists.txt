@@ -2,11 +2,18 @@ cmake_minimum_required(VERSION 3.10)
 project(rcan_test C CXX)
 enable_testing()
 
+include(../librcan.cmake)
+
 set(CTEST_OUTPUT_ON_FAILURE ON)
 set(library_dir1 "${CMAKE_CURRENT_LIST_DIR}/../")
 set(library_dir2 "${CMAKE_CURRENT_LIST_DIR}/../can/")
-set(library_dir3 "${CMAKE_CURRENT_LIST_DIR}/../thirdparty/PCAN-Basic-linux/")
-set(library_dir4 "${CMAKE_CURRENT_LIST_DIR}/../thirdparty/PCAN-Basic-mac/")
+
+if (APPLE)
+    set(library_dir4 "${CMAKE_CURRENT_LIST_DIR}/../thirdparty/PCAN-Basic-mac/")
+elseif(UNIX AND NOT APPLE)
+    set(library_dir3 "${CMAKE_CURRENT_LIST_DIR}/../thirdparty/PCAN-Basic-linux/")
+endif()
+
 
 # Use -DNO_STATIC_ANALYSIS=1 to suppress static analysis.
 # If not suppressed, the tools used here shall be available, otherwise the build will fail.
@@ -37,21 +44,25 @@ set(CXX_EXTENSIONS OFF)
 
 
 add_compile_options(
-        -Wall -Wextra -Werror -pedantic -fstrict-aliasing -Wdouble-promotion -Wswitch-enum -Wfloat-equal -Wundef
+        -Wall -Wextra  -pedantic -fstrict-aliasing -Wdouble-promotion -Wswitch-enum -Wfloat-equal -Wundef
         -Wconversion -Wtype-limits -Wsign-conversion -Wcast-align
 )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Woverloaded-virtual -Wnon-virtual-dtor -Wsign-promo")
 
-include_directories(catch ${library_dir1} ${library_dir2} ${library_dir3} ${library_dir4})
+include_directories(${CMAKE_CURRENT_LIST_DIR}/catch/  ${library_dir1} ${library_dir2} ${library_dir3} ${library_dir4} )
 add_definitions(-DCATCH_CONFIG_FAST_COMPILE=1 -DCATCH_CONFIG_ENABLE_ALL_STRINGMAKERS=1)
-add_definitions(-DRCAN_MACOS)
+add_definitions(-DRCAN_UNIX)
 
-set(common_sources tests.cpp ${CMAKE_CURRENT_LIST_DIR}/../rcan.c ${CMAKE_CURRENT_LIST_DIR}/../can/u_can.c)
+set(common_sources
+        tests.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/../rcan.c
+        ${CMAKE_CURRENT_LIST_DIR}/../can/u_can.c
+        ${CMAKE_CURRENT_LIST_DIR}/../rcan_filter.c)
 
 function(gen_test name files compile_definitions compile_flags link_flags c_standard)
-    add_executable(${name} ${common_sources} ${files})
+    add_executable(${name} ${common_sources} ${files} ${RCAN_EXECUTABLE_FILES})
     target_compile_definitions(${name} PUBLIC ${compile_definitions})
-    target_link_libraries(${name} pthread)
+    target_link_libraries(${name} pthread ${RCAN_LIBRARIES})
     set_target_properties(
             ${name}
             PROPERTIES
@@ -63,10 +74,10 @@ function(gen_test name files compile_definitions compile_flags link_flags c_stan
 endfunction()
 
 function(gen_test_matrix name files compile_definitions compile_flags)
-    gen_test("${name}_x64_c99" "${files}" "${compile_definitions}" "${compile_flags} -m64" "-m64" "99")
+    #gen_test("${name}_x64_c99" "${files}" "${compile_definitions}" "${compile_flags} -m64" "-m64" "99")
     #gen_test("${name}_x32_c99" "${files}" "${compile_definitions}" "${compile_flags} -m32" "-m32" "99")
     gen_test("${name}_x64_c11" "${files}" "${compile_definitions}" "${compile_flags} -m64" "-m64" "11")
-    #gen_test("${name}_x32_c11" "${files}" "${compile_definitions}" "${compile_flags} -m32" "-m32" "11")
+    gen_test("${name}_x32_c11" "${files}" "${compile_definitions}" "${compile_flags} -m32" "-m32" "11")
     # Coverage is only available for GCC builds.
     if ((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_BUILD_TYPE STREQUAL "Debug"))
         gen_test("${name}_cov"
@@ -83,7 +94,5 @@ gen_test_matrix(test_public
         ""
         "-Wmissing-declarations")
 
-message(" dir 1 ${library_dir1}")
-message(" dir 2 ${library_dir2}")
-message(" dir 3 ${library_dir3}")
-message(" dir 4 ${library_dir4}")
+
+

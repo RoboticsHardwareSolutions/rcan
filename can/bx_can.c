@@ -1,4 +1,3 @@
-
 #if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || defined(STM32F103xB)
 
 #    include "bx_can.h"

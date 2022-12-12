@@ -1,5 +1,4 @@
-#ifndef __U_CAN_H
-#define __U_CAN_H
+#pragma once
 
 #if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
 
@@ -31,5 +30,3 @@ bool u_can_send(rcan* can, rcan_frame* frame);
 bool u_can_receive(rcan* can, rcan_frame* frame);
 
 #endif  // defined(RCAN_UNIX) || defined(RCAN_MACOS) || defined(RCAN_WINDOWS)
-
-#endif  //__U_CAN_H

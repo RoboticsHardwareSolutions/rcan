@@ -1,5 +1,3 @@
-
-
 #if defined(STM32G474xx)
 
 #    include "bx_canfd.h"
@@ -247,4 +245,4 @@ static bool bx_canfd_make_can_tx_header(rcan_frame* frame, FDCAN_TxHeaderTypeDef
     return true;
 }
 
-#endif  // endif rcan STM32G474xx
+#endif  // defined(STM32G474xx)
