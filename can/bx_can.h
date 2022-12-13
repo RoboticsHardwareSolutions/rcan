@@ -1,7 +1,7 @@
 #ifndef __BX_CAN_H_
 #define __BX_CAN_H_
 
-#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || defined(STM32F103xB)
+#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || defined(STM32F103xB) || defined(STM32F407xx)
 
 #    include "stdbool.h"
 #    include "rcan_def.h"
@@ -26,6 +26,12 @@
 #        include "stm32f0xx_hal.h"
 
 #    endif  // defined(STM32F103xB)
+
+#    if defined(STM32F407xx)
+
+#        include "stm32f4xx_hal.h"
+
+#    endif
 
 struct can_iface
 {
