@@ -1,13 +1,13 @@
-#ifndef __RCAN_H
-#define __RCAN_H
+#ifndef __RCAN_H__
+#define __RCAN_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "stdbool.h"
-#include "rcan_def.h"
 #include "stdint.h"
+#include "rcan_def.h"
 
 typedef struct can_iface rcan;
 

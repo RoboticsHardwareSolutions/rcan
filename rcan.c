@@ -2,6 +2,10 @@
 #include "stdio.h"
 #include "stdint.h"
 
+#include "u_can.h"
+#include "bx_can.h"
+#include "bx_canfd.h"
+
 bool rcan_filter_preconfiguration(rcan* can, uint32_t* accepted_ids, uint32_t size)
 {
     if (can == NULL || accepted_ids == NULL || size == 0)
@@ -62,7 +66,7 @@ bool rcan_stop(rcan* can)
         return false;
 
 #if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
-    return rcan_stop(can);
+    return u_can_stop(can);
 #endif
 
 #if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx)
@@ -117,11 +121,11 @@ void rcan_view_frame(rcan_frame* frame)
 
     if (frame->rtr)
     {
-        printf("ID : %8lx RTR ", frame->id);
+        printf("ID : %8x RTR ", frame->id);
         return;
     }
 
-    printf("ID : %8lx | %s | LEN : %2d | DATA : ", frame->id, frame->type == std_id ? "STD" : "EXT", frame->len);
+    printf("ID : %8x | %s | LEN : %2d | DATA : ", frame->id, frame->type == std_id ? "STD" : "EXT", frame->len);
     for (uint8_t i = 0; i < frame->len; i++)
     {
         printf("%02x ", frame->payload[i]);
