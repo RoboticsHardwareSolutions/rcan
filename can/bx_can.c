@@ -183,18 +183,22 @@ static bool bx_can_set_filter(rcan* can)
     }
 
 #    elif defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F103xB)
+    #if defined(CAN2)
     if (can->handle.Instance == CAN2)
     {
         sFilterConfig.FilterBank = 1;
     }
-    if (can->handle.Instance == CAN1)
-    {
-        sFilterConfig.FilterBank = 0;
-    }
+    #elif defined(CAN3)
     if (can->handle.Instance == CAN3)
     {
         sFilterConfig.FilterBank = 2;
     }
+    #else
+    if (can->handle.Instance == CAN1)
+    {
+        sFilterConfig.FilterBank = 0;
+    }
+    #endif
 #    elif defined(STM32F407xx) || defined(STM32F429xx)
     if (can->handle.Instance == CAN2)
     {
