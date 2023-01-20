@@ -217,11 +217,11 @@ static bool bx_can_set_filter(rcan* can)
         sFilterConfig.FilterMaskIdHigh = (uint16_t) (can->filter.mask_filter.mask >> 13);
         sFilterConfig.FilterMaskIdLow = (uint16_t) ((can->filter.mask_filter.mask << 3 ) | CAN_ID_EXT);
     } else {
-        sFilterConfig.FilterIdHigh = (uint16_t) (can->filter.mask_filter.id << 5) | ((can->filter.mask_filter.id >> 24) & 0x1F);
-        sFilterConfig.FilterIdLow = (uint16_t) ((can->filter.mask_filter.id >> 11) << 3);
+        sFilterConfig.FilterIdHigh = (uint16_t) (can->filter.mask_filter.id << 5);
+        sFilterConfig.FilterIdLow = (uint16_t) 0;
 
-        sFilterConfig.FilterMaskIdHigh = (uint16_t) (can->filter.mask_filter.mask << 5) | ((can->filter.mask_filter.mask >> 24) & 0x1F);
-        sFilterConfig.FilterMaskIdLow = (uint16_t) ((can->filter.mask_filter.mask >> 11) << 3);
+        sFilterConfig.FilterMaskIdHigh = (uint16_t) (can->filter.mask_filter.mask << 5);
+        sFilterConfig.FilterMaskIdLow = (uint16_t) 0;
     }
 
     sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
