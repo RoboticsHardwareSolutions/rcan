@@ -20,11 +20,11 @@ RUN apt-get install -y --no-install-recommends\
     && rm -rf /var/lib/apt/lists/*
 
 
-RUN wget https://gitlab.com/RoboticsHardwareSolutions/rlibs/rcan/-/archive/master/rcan-master.zip --no-check-certificate \
-    && unzip rcan-master.zip \
-    && rm rcan-master.zip
+RUN wget https://gitlab.com/RoboticsHardwareSolutions/rlibs/rcan/-/archive/add_zeromq_canbus/rcan-add_zeromq_canbus.zip --no-check-certificate \
+    && unzip rcan-add_zeromq_canbus.zip \
+    && rm rcan-add_zeromq_canbus.zip
 
-WORKDIR /rcan-master
+WORKDIR /rcan-add_zeromq_canbus
 
 RUN cd test \
     && mkdir build \
