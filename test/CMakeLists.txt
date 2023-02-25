@@ -74,8 +74,6 @@ function(gen_test name files compile_definitions compile_flags link_flags c_stan
 endfunction()
 
 function(gen_test_matrix name files compile_definitions compile_flags)
-    #gen_test("${name}_x64_c99" "${files}" "${compile_definitions}" "${compile_flags} -m64" "-m64" "99")
-    #gen_test("${name}_x32_c99" "${files}" "${compile_definitions}" "${compile_flags} -m32" "-m32" "99")
     gen_test("${name}_x64_c11" "${files}" "${compile_definitions}" "${compile_flags} -m64" "-m64" "11")
     gen_test("${name}_x32_c11" "${files}" "${compile_definitions}" "${compile_flags} -m32" "-m32" "11")
     # Coverage is only available for GCC builds.

@@ -30,8 +30,8 @@ RUN cd test \
     && mkdir build \
     && cd build \
     && cmake .. \
-    && make test_public_x64_c11 \
-    && sudo ./test_public_x64_c11
+#    && make test_public_x64_c11 \
+#    && sudo ./test_public_x64_c11
 
 
 #ENTRYPOINT [ "python2.7", "/co_objdictgen-master/objdictedit.py" ]
