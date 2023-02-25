@@ -1,6 +1,6 @@
 #define CATCH_CONFIG_MAIN
 
-#include <catch2/catch.hpp>
+#include <catch/catch.hpp>
 #include "rcan.h"
 
 #define EXT_ID_MAX 0x1FFFFFFFU
