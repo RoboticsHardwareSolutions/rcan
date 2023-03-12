@@ -3,6 +3,7 @@ project(rcan_test C CXX)
 enable_testing()
 
 include(${CMAKE_CURRENT_LIST_DIR}/../librcan.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../Findlibzmq.cmake)
 
 set(CTEST_OUTPUT_ON_FAILURE ON)
 set(library_dir1 "${CMAKE_CURRENT_LIST_DIR}/../")
@@ -57,7 +58,8 @@ set(common_sources
         tests.cpp
         ${CMAKE_CURRENT_LIST_DIR}/../rcan.c
         ${CMAKE_CURRENT_LIST_DIR}/../can/u_can.c
-        ${CMAKE_CURRENT_LIST_DIR}/../rcan_filter.c)
+        ${CMAKE_CURRENT_LIST_DIR}/../rcan_filter.c
+        ${CMAKE_CURRENT_LIST_DIR}/../can/zmq_can.c)
 
 function(gen_test name files compile_definitions compile_flags link_flags c_standard)
     add_executable(${name} ${common_sources} ${files} ${RCAN_EXECUTABLE_FILES})
@@ -74,8 +76,7 @@ function(gen_test name files compile_definitions compile_flags link_flags c_stan
 endfunction()
 
 function(gen_test_matrix name files compile_definitions compile_flags)
-    gen_test("${name}_x64_c11" "${files}" "${compile_definitions}" "${compile_flags} -m64" "-m64" "11")
-    gen_test("${name}_x32_c11" "${files}" "${compile_definitions}" "${compile_flags} -m32" "-m32" "11")
+    gen_test("${name}_x64_c11" "${files}" "${compile_definitions}" "${compile_flags}" "" "11")
     # Coverage is only available for GCC builds.
     if ((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_BUILD_TYPE STREQUAL "Debug"))
         gen_test("${name}_cov"

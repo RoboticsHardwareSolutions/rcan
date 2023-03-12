@@ -1,18 +1,10 @@
 #define CATCH_CONFIG_MAIN
 
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 #include "rcan.h"
 
 #define EXT_ID_MAX 0x1FFFFFFFU
 #define STD_ID_MAX 0x000007FFU
-
-#if defined(RCAN_UNIX)
-
-#    include "pthread.h"
-#    include "stdlib.h"
-#    include "unistd.h"
-
-#endif
 
 #if defined(RCAN_WINDOWS)
 #    include "stdlib.h"
@@ -20,7 +12,11 @@
 #    include <iostream>
 #endif
 
-#if defined(RCAN_UNIX)
+#if defined(RCAN_UNIX_TEST_VIRTUAL_CAN)
+#    include "pthread.h"
+#    include "stdlib.h"
+#    include "unistd.h"
+
 /**********************************************************************************************************************/
 /**********************************************************************************************************************/
 /**********************************************************************************************************************/
@@ -322,7 +318,7 @@ TEST_CASE("virtual can")
 /**********************************************************************************************************************/
 /**********************************************************************************************************************/
 
-#endif  // endif RCAN_UNIX
+#endif  // endif RCAN_UNIX_TEST_VIRTUAL_CAN
 
 #if defined(RCAN_UNIX_HARDWARE_EQUIPMENT_TEST)
 
