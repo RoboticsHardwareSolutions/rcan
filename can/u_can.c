@@ -4,99 +4,121 @@
 #    include "u_can.h"
 #    include "stdio.h"
 #    include "string.h"
+#    include "zmq.h"
+#    include <uuid/uuid.h>
 
 #    if defined(RCAN_UNIX)
+
+
+static bool translate_socket_can_name(uint32_t channel, struct ifreq *ifr);
+
+static bool socket_can_start(rcan *can, uint32_t channel, uint32_t bitrate);
+
+static bool socet_can_read(rcan *can, rcan_frame *frame);
+
+static bool socet_can_write(rcan *can, rcan_frame *frame);
+
+
+#    endif  // #endif  defined(RCAN_UNIX)
+
+static bool is_peak_can_iface(uint32_t channel);
 
 static bool is_socket_can_iface(uint32_t channel);
 
 static bool is_vcan_iface(uint32_t channel);
 
-static bool translate_socket_can_name(uint32_t channel, struct ifreq* ifr);
+static bool is_virtual_can_iface(uint32_t channel);
 
-static bool socket_can_start(rcan* can, uint32_t channel, uint32_t bitrate);
+static bool virtual_can_start(rcan *can, uint32_t channel, uint32_t bitrate);
 
-static bool socet_can_read(rcan* can, rcan_frame* frame);
+static bool virtual_can_read(rcan *can, rcan_frame *frame);
 
-static bool socet_can_write(rcan* can, rcan_frame* frame);
+static bool virtual_can_write(rcan *can, rcan_frame *frame);
 
-static bool is_pcan_iface(uint32_t channel);
+static bool virtual_can_stop(rcan *can);
 
-#    endif  // #endif  defined(RCAN_UNIX)
+static bool is_correct_bitrate_for_peak_can(uint32_t bitrate);
 
-static bool is_correct_bitrate_for_pcan(uint32_t bitrate);
+static bool peak_can_start(rcan *can, uint32_t channel, uint32_t bitrate);
 
-static bool pcan_start(rcan* can, uint32_t channel, uint32_t bitrate);
+static bool peak_can_read(rcan *can, rcan_frame *frame);
 
-static bool pcan_read(rcan* can, rcan_frame* frame);
+static bool peak_can_write(rcan *can, rcan_frame *frame);
 
-static bool pcan_write(rcan* can, rcan_frame* frame);
+static uint32_t convert_to_peak_can_bitrate(uint32_t bitrate);
 
-static uint32_t convert_to_pcan_bitrate(uint32_t bitrate);
-
-bool u_can_filter_preconfiguration(rcan* can, uint32_t* accepted_ids, uint32_t size)
-{
+bool u_can_filter_preconfiguration(rcan *can, uint32_t *accepted_ids, uint32_t size) {
     // TODO make software support filter on macOS and api compactable on linux/win
     can->use_filter = true;
     return rcan_filter_calculate(accepted_ids, size, &can->filter);
 }
 
-bool u_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
-{
+bool u_can_start(rcan *can, uint32_t channel, uint32_t bitrate) {
     // TODO create function of convert all baudrate to standart.
+    bool virtual = false, socket = false, peak = false;
 
-    if (can->opened)
+    virtual = is_virtual_can_iface(channel);
+    socket = is_socket_can_iface(channel);
+    peak = is_peak_can_iface(channel);
+
+    if (can->can_ready)
         return false;
 
-    bool success = false;
+    bool opened = false;
+
+    if (virtual) {
+        opened = virtual_can_start(can, channel, bitrate);
+
+        if (!opened)
+            return false;
+
+        can->channel = channel;
+        can->can_ready = true;
+        return true;
+    }
 
 #    if defined(RCAN_WINDOWS) || defined(RCAN_MACOS)
 
-    if (!is_correct_bitrate_for_pcan(bitrate))
+    if (!is_correct_bitrate_for_peak_can(bitrate))
         return false;
 
-    uint32_t pcan_bitrate = convert_to_pcan_bitrate(bitrate);
+    uint32_t peak_can_bitrate = convert_to_peak_can_bitrate(bitrate);
 
-    success = pcan_start(can, channel, pcan_bitrate);
+    opened = peak_can_start(can, channel, peak_can_bitrate);
 
 #    endif  // defined(RCAN_WINDOWS) || defined (RCAN_MACOS)
 
 #    if defined(RCAN_UNIX)
 
-    if (is_pcan_iface(channel))
-    {
-        if (!is_correct_bitrate_for_pcan(bitrate))
+    if (peak) {
+        if (!is_correct_bitrate_for_peak_can(bitrate))
             return false;
-
-        uint32_t pcan_bitrate = convert_to_pcan_bitrate(bitrate);
-
-        success = pcan_start(can, channel, pcan_bitrate);
+        uint32_t peak_can_bitrate = convert_to_peak_can_bitrate(bitrate);
+        opened = peak_can_start(can, channel, peak_can_bitrate);
     }
-    else if (is_socket_can_iface(channel))
-        success = socket_can_start(can, channel, bitrate);
+    if (socket) {
+        opened = socket_can_start(can, channel, bitrate);
+    }
 
 #    endif  // defined(RCAN_UNIX)
 
-    if (!success)
+    if (!opened)
         return false;
 
     can->channel = channel;
-    can->opened  = true;
+    can->can_ready = true;
     return true;
 }
 
-bool u_can_is_ok(rcan* can)
-{
-    if (!can->opened)
+bool u_can_is_ok(rcan *can) {
+    if (!can->can_ready)
         return false;
 
 #    if defined(RCAN_UNIX)
 
-    if (is_pcan_iface(can->channel))
-    {
+    if (is_peak_can_iface(can->channel)) {
         return CAN_GetValue(can->channel, PCAN_RECEIVE_EVENT, &can->fd, sizeof(int)) == PCAN_ERROR_OK;
-    }
-    else
-    {
+    } else {
         // TODO add check socet can state
         return true;
     }
@@ -110,10 +132,15 @@ bool u_can_is_ok(rcan* can)
 #    endif
 }
 
-bool u_can_stop(rcan* can)
-{
-    if (!can->opened)
+bool u_can_stop(rcan *can) {
+    if (!can->can_ready)
         return false;
+
+    if (is_virtual_can_iface(can->channel)) {
+        virtual_can_stop(can);
+        can->can_ready = false;
+        return true;
+    }
 
 #    if defined(RCAN_WINDOWS) || defined(RCAN_MACOS)
 
@@ -123,60 +150,64 @@ bool u_can_stop(rcan* can)
 
 #    if defined(RCAN_UNIX)
 
-    if (is_pcan_iface(can->channel))
-    {
+    if (is_peak_can_iface(can->channel)) {
+
         CAN_Uninitialize(can->channel);
-    }
-    else
-    {
+
+    } else {
+
         if (close(can->fd) < 0)
-        {
             return false;
-        }
+
     }
 
 #    endif
 
-    can->opened = false;
+    can->can_ready = false;
     return true;
 }
 
-bool u_can_send(rcan* can, rcan_frame* frame)
-{
-    if (!can->opened)
+bool u_can_send(rcan *can, rcan_frame *frame) {
+    if (!can->can_ready)
         return false;
+
+    if (is_virtual_can_iface(can->channel))
+        return virtual_can_write(can, frame);
+
 
 #    if defined(RCAN_WINDOWS) || defined(RCAN_MACOS)
 
-    return pcan_write(can, frame);
+    return peak_can_write(can, frame);
 
 #    endif
 
 #    if defined(RCAN_UNIX)
 
-    if (is_pcan_iface(can->channel))
-        return pcan_write(can, frame);
+    if (is_peak_can_iface(can->channel))
+        return peak_can_write(can, frame);
     else
         return socet_can_write(can, frame);
 
 #    endif
 }
 
-bool u_can_receive(rcan* can, rcan_frame* frame)
-{
-    if (!can->opened)
+bool u_can_receive(rcan *can, rcan_frame *frame) {
+    if (!can->can_ready)
         return false;
+
+    if (is_virtual_can_iface(can->channel))
+        return virtual_can_read(can, frame);
 
 #    if defined(RCAN_WINDOWS) || defined(RCAN_MACOS)
 
-    return pcan_read(can, frame);
+    return peak_can_read(can, frame);
 
 #    endif
 
 #    if defined(RCAN_UNIX)
 
-    if (is_pcan_iface(can->channel))
-        return pcan_read(can, frame);
+    if (is_peak_can_iface(can->channel))
+        return peak_can_read(can, frame);
     else
         return socet_can_read(can, frame);
 
@@ -184,20 +215,16 @@ bool u_can_receive(rcan* can, rcan_frame* frame)
 }
 
 /*********************************************  PCAN  *****************************************************************/
-#    if defined(RCAN_UNIX)
 
-static bool is_pcan_iface(uint32_t channel)
-{
-    if (channel == PCAN_USBBUS1 || channel == PCAN_USBBUS2 || channel == PCAN_USBBUS3 || channel == PCAN_PCIBUS1 ||
-        channel == PCAN_PCIBUS2 || channel == PCAN_PCIBUS3)
+static bool is_peak_can_iface(uint32_t channel) {
+    if (channel == PEAK_CAN_USBBUS1 || channel == PEAK_CAN_USBBUS2 || channel == PEAK_CAN_USBBUS3 ||
+        channel == PEAK_CAN_PCIBUS1 || channel == PEAK_CAN_PCIBUS2 || channel == PEAK_CAN_PCIBUS3)
         return true;
     else
         return false;
 }
-#    endif
 
-static bool is_correct_bitrate_for_pcan(uint32_t bitrate)
-{
+static bool is_correct_bitrate_for_peak_can(uint32_t bitrate) {
     if (bitrate == PCAN_BAUD_1M || bitrate == PCAN_BAUD_800K || bitrate == PCAN_BAUD_500K ||
         bitrate == PCAN_BAUD_250K || bitrate == PCAN_BAUD_125K || bitrate == PCAN_BAUD_100K ||
         bitrate == PCAN_BAUD_95K || bitrate == PCAN_BAUD_83K || bitrate == PCAN_BAUD_50K || bitrate == PCAN_BAUD_47K ||
@@ -207,46 +234,42 @@ static bool is_correct_bitrate_for_pcan(uint32_t bitrate)
     return false;
 }
 
-static uint32_t convert_to_pcan_bitrate(uint32_t bitrate)
-{
-    switch (bitrate)
-    {
-    case 1000000:
-        return PCAN_BAUD_1M;
-    case 800000:
-        return PCAN_BAUD_800K;
-    case 500000:
-        return PCAN_BAUD_500K;
-    case 250000:
-        return PCAN_BAUD_250K;
-    case 125000:
-        return PCAN_BAUD_125K;
-    case 100000:
-        return PCAN_BAUD_100K;
-    case 95000:
-        return PCAN_BAUD_95K;
-    case 83000:
-        return PCAN_BAUD_83K;
-    case 50000:
-        return PCAN_BAUD_50K;
-    case 47000:
-        return PCAN_BAUD_47K;
-    case 33000:
-        return PCAN_BAUD_33K;
-    case 20000:
-        return PCAN_BAUD_20K;
-    case 10000:
-        return PCAN_BAUD_10K;
-    case 5000:
-        return PCAN_BAUD_5K;
-    default:
-        return 0;
+static uint32_t convert_to_peak_can_bitrate(uint32_t bitrate) {
+    switch (bitrate) {
+        case 1000000:
+            return PCAN_BAUD_1M;
+        case 800000:
+            return PCAN_BAUD_800K;
+        case 500000:
+            return PCAN_BAUD_500K;
+        case 250000:
+            return PCAN_BAUD_250K;
+        case 125000:
+            return PCAN_BAUD_125K;
+        case 100000:
+            return PCAN_BAUD_100K;
+        case 95000:
+            return PCAN_BAUD_95K;
+        case 83000:
+            return PCAN_BAUD_83K;
+        case 50000:
+            return PCAN_BAUD_50K;
+        case 47000:
+            return PCAN_BAUD_47K;
+        case 33000:
+            return PCAN_BAUD_33K;
+        case 20000:
+            return PCAN_BAUD_20K;
+        case 10000:
+            return PCAN_BAUD_10K;
+        case 5000:
+            return PCAN_BAUD_5K;
+        default:
+            return 0;
     }
 }
 
-static bool pcan_start(rcan* can, uint32_t channel, uint32_t bitrate)
-{
-    // TODO create function of convert all baudrate to standart.
+static bool peak_can_start(rcan *can, uint32_t channel, uint32_t bitrate) {
     // TODO add  filter configuration
     TPCANStatus status;
 
@@ -261,9 +284,8 @@ static bool pcan_start(rcan* can, uint32_t channel, uint32_t bitrate)
     return true;
 }
 
-static bool pcan_read(rcan* can, rcan_frame* frame)
-{
-    TPCANMsg    message = {0};
+static bool peak_can_read(rcan *can, rcan_frame *frame) {
+    TPCANMsg message = {0};
     TPCANStatus status;
 
     status = CAN_Read((unsigned short) can->channel, &message, NULL);
@@ -276,7 +298,7 @@ static bool pcan_read(rcan* can, rcan_frame* frame)
     // TODO read error message after you must return false
 
     frame->len = message.LEN;
-    frame->id  = message.ID;
+    frame->id = message.ID;
 
     if (message.MSGTYPE & PCAN_MESSAGE_EXTENDED)
         frame->type = ext_id;
@@ -291,26 +313,22 @@ static bool pcan_read(rcan* can, rcan_frame* frame)
     return true;
 }
 
-static bool pcan_write(rcan* can, rcan_frame* frame)
-{
+static bool peak_can_write(rcan *can, rcan_frame *frame) {
     TPCANMsg message = {0};
 
-    if (frame->type == std_id)
-    {
+    if (frame->type == std_id) {
         if (frame->id > RCAN_STD_ID_MAX)
             return false;
 
         message.MSGTYPE |= PCAN_MESSAGE_STANDARD;
-    }
-    else if (frame->type == ext_id)
-    {
+    } else if (frame->type == ext_id) {
         if (frame->id > RCAN_EXT_ID_MAX)
             return false;
 
         message.MSGTYPE |= PCAN_MESSAGE_EXTENDED;
     }
 
-    message.ID  = frame->id;
+    message.ID = frame->id;
     message.LEN = frame->len;
 
     if (frame->rtr)
@@ -321,12 +339,125 @@ static bool pcan_write(rcan* can, rcan_frame* frame)
     return CAN_Write((unsigned short) can->channel, &message) == PCAN_ERROR_OK ? true : false;
 }
 
+/***************************************  ZEROMQ CAN   ****************************************************************/
+
+static bool is_virtual_can_iface(uint32_t channel) {
+    if (channel == VIRTUAL_CAN_BUS0 || channel == VIRTUAL_CAN_BUS1 || channel == VIRTUAL_CAN_BUS2)
+        return true;
+
+    return false;
+}
+
+static bool virtual_can_start(rcan *can, uint32_t channel, uint32_t bitrate) {
+
+    can->ctx = zmq_ctx_new();
+
+    if (can->ctx == NULL)
+        return false;
+
+    bool bind = false, connect = false, setopt = false, uuid = false;
+    can->pub = zmq_socket(can->ctx, ZMQ_PUB);
+    can->sub = zmq_socket(can->ctx, ZMQ_SUB);
+
+    if (zmq_bind(can->pub, "tcp://*:4040") == 0) // TODO add other port for other bus
+        bind = true;
+
+    if (zmq_connect(can->sub, "tcp://localhost:4040") == 0)  // TODO add other port for other bus
+        connect = true;
+
+    if (zmq_setsockopt(can->sub, ZMQ_SUBSCRIBE, 0, 0) == 0)
+        setopt = true;
+
+    uuid_generate_random(can->node_id);
+
+    if (!uuid_is_null(can->node_id))
+        uuid = true;
+
+    if (!(setopt && connect && setopt && uuid)) {
+        uuid_clear(can->node_id);
+        zmq_close(can->pub);
+        zmq_close(can->sub);
+        zmq_ctx_destroy(can->ctx);
+        return false;
+    }
+    return true;
+}
+
+static bool virtual_can_read(rcan *can, rcan_frame *frame) {
+
+    struct virtual_can_frame virtual_frame;
+    zmq_msg_t message;
+    zmq_msg_init(&message);
+    int res = zmq_msg_recv(&message, can->sub, ZMQ_DONTWAIT);
+    if (res == -1 || res == 0) {
+        zmq_msg_close(&message);
+        return false;
+    }
+
+    if (res >= sizeof(virtual_frame)) {
+
+        if (zmq_msg_size(&message) == sizeof(virtual_frame)) {
+
+            memcpy(&virtual_frame, zmq_msg_data(&message), sizeof(virtual_frame));
+            if (uuid_compare(can->node_id, virtual_frame.uuid) == 0) { // self node message drop
+                zmq_msg_close(&message);
+                return false;
+            }
+            /** real message */
+            memcpy(frame, &virtual_frame.can_frame, sizeof(rcan_frame));
+            zmq_msg_close(&message);
+            return true;
+
+        } else {
+
+            printf("fucking sheet will make portion buffer in other time :(\r\n"); // FIXME
+            zmq_msg_close(&message);
+            return false;
+        }
+
+    } else {
+
+        printf("fucking sheet will make portion buffer in other time :(\r\n");  // FIXME
+        zmq_msg_close(&message);
+        return false;
+
+    }
+
+}
+
+static bool virtual_can_write(rcan *can, rcan_frame *frame) {
+
+    struct virtual_can_frame virtual_frame;
+    zmq_msg_t message;
+    uuid_copy(virtual_frame.uuid, can->node_id);
+    memcpy(&virtual_frame.can_frame, frame, sizeof(rcan_frame));  // FIXME delete double copy
+
+    if (zmq_msg_init_size(&message, sizeof(virtual_frame)) != 0) {
+        return false;
+    }
+
+    memcpy(zmq_msg_data(&message), &virtual_frame, sizeof(virtual_frame)); // FIXME delete double copy
+
+    if (zmq_msg_send(&message, can->pub, 0) == -1) {
+        zmq_msg_close(&message);
+        return false;
+    }
+    zmq_msg_close(&message);
+    return true;
+}
+
+static bool virtual_can_stop(rcan *can) {
+
+    zmq_close(can->sub);
+    zmq_close(can->pub);
+    zmq_ctx_destroy(can->ctx);
+    return true;
+}
+
+
 /***************************************  SOCET CAN   *****************************************************************/
 
-#    if defined(RCAN_UNIX)
-
-static bool is_socket_can_iface(uint32_t channel)
-{
+static bool is_socket_can_iface(uint32_t channel) {
     if (channel == SOCKET_VCAN0 || channel == SOCKET_VCAN1 || channel == SOCKET_VCAN2 || channel == SOCKET_CAN0 ||
         channel == SOCKET_CAN1 || channel == SOCKET_CAN2)
         return true;
@@ -334,16 +465,16 @@ static bool is_socket_can_iface(uint32_t channel)
     return false;
 }
 
-static bool is_vcan_iface(uint32_t channel)
-{
+static bool is_vcan_iface(uint32_t channel) {
     return channel == SOCKET_VCAN0 || channel == SOCKET_VCAN1 || channel == SOCKET_VCAN2 ? true : false;
 }
 
-static void create_vcan(const char* name)
-{
-    char  cli_enter[50];
-    char* add    = "add";
-    char* delete = "delete";
+#    if defined(RCAN_UNIX)
+
+static void create_vcan(const char *name) {
+    char cli_enter[50];
+    char *add = "add";
+    char *delete = "delete";
 
     memset(cli_enter, '\0', sizeof(cli_enter));
     sprintf(cli_enter, "sudo ip link %s dev %s", delete, name);
@@ -354,8 +485,7 @@ static void create_vcan(const char* name)
     system(cli_enter);
 }
 
-static bool translate_socket_can_name(uint32_t channel, struct ifreq* ifr)
-{
+static bool translate_socket_can_name(uint32_t channel, struct ifreq *ifr) {
     if (channel == SOCKET_VCAN0)
         strcpy(ifr->ifr_ifrn.ifrn_name, "vcan0");
     else if (channel == SOCKET_VCAN1)
@@ -374,11 +504,10 @@ static bool translate_socket_can_name(uint32_t channel, struct ifreq* ifr)
     return true;
 }
 
-static bool socket_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
-{
+static bool socket_can_start(rcan *can, uint32_t channel, uint32_t bitrate) {
     // TODO add bitrate and filter configuration
     struct sockaddr_can addr;
-    struct ifreq        ifr;
+    struct ifreq ifr;
 
     //    struct can_device_stats can_status = {0};
     //    struct can_ctrlmode can_ctrl_mode = {0};
@@ -402,8 +531,7 @@ static bool socket_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
     if (can_do_stop(ifr.ifr_ifrn.ifrn_name) != 0)
         return false;
 
-    if (!is_vcan_iface(channel))
-    {
+    if (!is_vcan_iface(channel)) {
         if (can_set_bitrate(ifr.ifr_ifrn.ifrn_name, bitrate) != 0)
             return false;
     }
@@ -420,18 +548,17 @@ static bool socket_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
     fcntl(can->fd, F_SETFL, flags | O_NONBLOCK);
 
     memset(&addr, 0, sizeof(addr));
-    addr.can_family  = AF_CAN;
+    addr.can_family = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
 
-    if (bind(can->fd, (struct sockaddr*) &addr, sizeof(addr)) < 0)
+    if (bind(can->fd, (struct sockaddr *) &addr, sizeof(addr)) < 0)
         return false;
 
     return true;
 }
 
-static bool socet_can_read(rcan* can, rcan_frame* frame)
-{
-    int              nbytes;
+static bool socet_can_read(rcan *can, rcan_frame *frame) {
+    int nbytes;
     struct can_frame socet_can_frame;
 
     nbytes = read(can->fd, &socet_can_frame, sizeof(struct can_frame));
@@ -442,14 +569,11 @@ static bool socet_can_read(rcan* can, rcan_frame* frame)
     if (socet_can_frame.can_id & CAN_ERR_FLAG)
         return false;
 
-    if (socet_can_frame.can_id & CAN_EFF_FLAG)
-    {
-        frame->id   = socet_can_frame.can_id & RCAN_EXT_ID_MAX;
+    if (socet_can_frame.can_id & CAN_EFF_FLAG) {
+        frame->id = socet_can_frame.can_id & RCAN_EXT_ID_MAX;
         frame->type = ext_id;
-    }
-    else
-    {
-        frame->id   = socet_can_frame.can_id & RCAN_STD_ID_MAX;
+    } else {
+        frame->id = socet_can_frame.can_id & RCAN_STD_ID_MAX;
         frame->type = std_id;
     }
 
@@ -462,8 +586,7 @@ static bool socet_can_read(rcan* can, rcan_frame* frame)
     return true;
 }
 
-static bool socet_can_write(rcan* can, rcan_frame* frame)
-{
+static bool socet_can_write(rcan *can, rcan_frame *frame) {
     struct can_frame socet_can_frame;
 
     socet_can_frame.can_id = frame->id;
@@ -471,15 +594,12 @@ static bool socet_can_write(rcan* can, rcan_frame* frame)
     if (frame->rtr)
         socet_can_frame.can_id |= CAN_RTR_FLAG;
 
-    if (frame->type == ext_id)
-    {
+    if (frame->type == ext_id) {
         if (frame->id > RCAN_EXT_ID_MAX)
             return false;
 
         socet_can_frame.can_id |= CAN_EFF_FLAG;
-    }
-    else if (frame->type == std_id)
-    {
+    } else if (frame->type == std_id) {
         socet_can_frame.can_id &= ~CAN_EFF_FLAG;
 
         if (frame->id > RCAN_STD_ID_MAX)
@@ -494,6 +614,7 @@ static bool socet_can_write(rcan* can, rcan_frame* frame)
 
     return true;
 }
+
 #    endif  // defined(RCAN_UNIX)
 
 #endif  // endif for defined(RCAN_WINDOWS) || defined (RCAN_MACOS) || defined (RCAN_UNIX)

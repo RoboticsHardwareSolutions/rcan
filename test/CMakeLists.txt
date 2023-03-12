@@ -58,8 +58,7 @@ set(common_sources
         tests.cpp
         ${CMAKE_CURRENT_LIST_DIR}/../rcan.c
         ${CMAKE_CURRENT_LIST_DIR}/../can/u_can.c
-        ${CMAKE_CURRENT_LIST_DIR}/../rcan_filter.c
-        ${CMAKE_CURRENT_LIST_DIR}/../can/zmq_can.c)
+        ${CMAKE_CURRENT_LIST_DIR}/../rcan_filter.c)
 
 function(gen_test name files compile_definitions compile_flags link_flags c_standard)
     add_executable(${name} ${common_sources} ${files} ${RCAN_EXECUTABLE_FILES})

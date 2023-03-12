@@ -23,6 +23,7 @@ RUN apt-get install -y --no-install-recommends\
     libpopt-dev \
     g++\
     gcc\
+    uuid-dev\
     clang-tidy\
     libzmq3-dev\
     openssh-server\

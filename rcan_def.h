@@ -6,23 +6,37 @@
 
 #define RCAN_MAX_FRAME_PAYLOAD_SIZE 8
 
-typedef enum { nonframe, std_id, ext_id } rcan_frame_type;
+typedef enum {
+    nonframe, std_id, ext_id
+} rcan_frame_type;
 
 #pragma pack(push)
 #pragma pack(1)
 
 typedef struct {
-  uint32_t id;
-  uint8_t len;
-  rcan_frame_type type;
-  bool rtr;
-  uint8_t payload[RCAN_MAX_FRAME_PAYLOAD_SIZE];
+    uint32_t id;
+    uint8_t len;
+    rcan_frame_type type;
+    bool rtr;
+    uint8_t payload[RCAN_MAX_FRAME_PAYLOAD_SIZE];
 } rcan_frame;
 
 #pragma pack(pop)
 
 #define RCAN_EXT_ID_MAX 0x1FFFFFFFU
 #define RCAN_STD_ID_MAX 0x000007FFU
+
+/**
+ * argument uint32_t channel in function rcan_start(..)
+ */
+
+#define PEAK_CAN_USBBUS1   0x51U  // PCAN-USB interface, channel 1
+#define PEAK_CAN_USBBUS2   0x52U  // PCAN-USB interface, channel 2
+#define PEAK_CAN_USBBUS3   0x53U  // PCAN-USB interface, channel 3
+
+#define PEAK_CAN_PCIBUS1  0x41U  // PCAN-PCI interface, channel 1
+#define PEAK_CAN_PCIBUS2  0x42U  // PCAN-PCI interface, channel 2
+#define PEAK_CAN_PCIBUS3  0x43U  // PCAN-PCI interface, channel 3
 
 #define SOCKET_CAN0 0x1224UL // macro for can socet can iface
 #define SOCKET_CAN1 0x1225UL
@@ -31,6 +45,11 @@ typedef struct {
 #define SOCKET_VCAN0 0x1234UL // macro for vcan socet can iface
 #define SOCKET_VCAN1 0x1235UL
 #define SOCKET_VCAN2 0x1236UL
+
+#define VIRTUAL_CAN_BUS0 0x1237UL
+#define VIRTUAL_CAN_BUS1 0x1238UL
+#define VIRTUAL_CAN_BUS2 0x1239UL
+
 
 #if defined(RCAN_MACOS)
 
@@ -67,14 +86,14 @@ typedef struct {
 
 #endif // defined(RCAN_UNIX)
 
-#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) ||    \
-    defined(STM32F091xC) || defined(STM32F103xB) || defined(STM32F407xx) ||    \
+#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || \
+    defined(STM32F091xC) || defined(STM32F103xB) || defined(STM32F407xx) || \
     defined(STM32F429xx)
 
 #include "bx_can.h"
 
 #endif // defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB)
-       // || defined(STM32F091xC) || defined(STM32F103xB)
+// || defined(STM32F091xC) || defined(STM32F103xB)
 
 #if defined(STM32G474xx)
 
