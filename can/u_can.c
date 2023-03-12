@@ -386,63 +386,38 @@ static bool virtual_can_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 static bool virtual_can_read(rcan *can, rcan_frame *frame) {
 
     struct virtual_can_frame virtual_frame;
-    zmq_msg_t message;
-    zmq_msg_init(&message);
-    int res = zmq_msg_recv(&message, can->sub, ZMQ_DONTWAIT);
+    int res = zmq_recv(can->sub, &virtual_frame, sizeof(virtual_frame), ZMQ_DONTWAIT);
     if (res == -1 || res == 0) {
-        zmq_msg_close(&message);
         return false;
     }
 
-    if (res >= sizeof(virtual_frame)) {
-
-        if (zmq_msg_size(&message) == sizeof(virtual_frame)) {
-
-            memcpy(&virtual_frame, zmq_msg_data(&message), sizeof(virtual_frame));
-            if (uuid_compare(can->node_id, virtual_frame.uuid) == 0) { // self node message drop
-                zmq_msg_close(&message);
-                return false;
-            }
-            /** real message */
-            memcpy(frame, &virtual_frame.can_frame, sizeof(rcan_frame));
-            zmq_msg_close(&message);
-            return true;
-
-        } else {
-
-            printf("fucking sheet will make portion buffer in other time :(\r\n"); // FIXME
-            zmq_msg_close(&message);
+    if (res == sizeof(virtual_frame)) {
+        if (uuid_compare(can->node_id, virtual_frame.uuid) == 0) { // self node message drop
             return false;
         }
+        /** real message */
+        memcpy(frame, &virtual_frame.can_frame, sizeof(rcan_frame));
+        return true;
 
     } else {
 
-        printf("fucking sheet will make portion buffer in other time :(\r\n");  // FIXME
-        zmq_msg_close(&message);
+        printf("fucking sheet will make portion buffer in other time :(\r\n"); // FIXME
         return false;
-
     }
 
 }
 
+
+
 static bool virtual_can_write(rcan *can, rcan_frame *frame) {
 
     struct virtual_can_frame virtual_frame;
-    zmq_msg_t message;
     uuid_copy(virtual_frame.uuid, can->node_id);
     memcpy(&virtual_frame.can_frame, frame, sizeof(rcan_frame));  // FIXME delete double copy
 
-    if (zmq_msg_init_size(&message, sizeof(virtual_frame)) != 0) {
+    if (zmq_send(can->pub, &virtual_frame, sizeof(virtual_frame), 0) == -1)
         return false;
-    }
 
-    memcpy(zmq_msg_data(&message), &virtual_frame, sizeof(virtual_frame)); // FIXME delete double copy
-
-    if (zmq_msg_send(&message, can->pub, 0) == -1) {
-        zmq_msg_close(&message);
-        return false;
-    }
-    zmq_msg_close(&message);
     return true;
 }
 
