@@ -359,7 +359,7 @@ static bool virtual_can_start(rcan *can, uint32_t channel, uint32_t bitrate) {
     can->pub = zmq_socket(can->ctx, ZMQ_PUB);
     can->sub = zmq_socket(can->ctx, ZMQ_SUB);
 
-    if (zmq_bind(can->pub, "tcp://*:4040") == 0) // TODO add other port for other bus
+    if (zmq_bind(can->pub, "tcp://localhost:4040") == 0) // TODO add other port for other bus
         bind = true;
 
     if (zmq_connect(can->sub, "tcp://localhost:4040") == 0)  // TODO add other port for other bus
