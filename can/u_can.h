@@ -25,10 +25,12 @@ struct can_iface {
 
 #pragma pack(push)
 #pragma pack(1)
-struct virtual_can_frame {
+typedef struct {
+
     uuid_t uuid;
     rcan_frame can_frame;
-};
+
+} virtual_can_frame;
 #pragma pack(pop)
 
 typedef struct can_iface rcan;

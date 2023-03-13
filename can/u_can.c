@@ -385,7 +385,7 @@ static bool virtual_can_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 
 static bool virtual_can_read(rcan *can, rcan_frame *frame) {
 
-    struct virtual_can_frame virtual_frame;
+    virtual_can_frame virtual_frame;
     int res = zmq_recv(can->sub, &virtual_frame, sizeof(virtual_frame), ZMQ_DONTWAIT);
     if (res == -1 || res == 0) {
         return false;
@@ -411,7 +411,7 @@ static bool virtual_can_read(rcan *can, rcan_frame *frame) {
 
 static bool virtual_can_write(rcan *can, rcan_frame *frame) {
 
-    struct virtual_can_frame virtual_frame;
+    virtual_can_frame virtual_frame;
     uuid_copy(virtual_frame.uuid, can->node_id);
     memcpy(&virtual_frame.can_frame, frame, sizeof(rcan_frame));  // FIXME delete double copy
 
