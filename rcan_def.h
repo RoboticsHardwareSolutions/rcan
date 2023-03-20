@@ -21,10 +21,13 @@ typedef struct {
     uint8_t payload[RCAN_MAX_FRAME_PAYLOAD_SIZE];
 } rcan_frame;
 
+//TODO INIT ALLOC AND FREE for rcan frame : for init use define
+
 #pragma pack(pop)
 
 #define RCAN_EXT_ID_MAX 0x1FFFFFFFU
 #define RCAN_STD_ID_MAX 0x000007FFU
+#define RCAN_MAX_NODE_QUANTITY 32
 
 /**
  * argument uint32_t channel in function rcan_start(..)

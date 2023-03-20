@@ -12,6 +12,7 @@ RUN apt-get install -y --no-install-recommends\
     iproute2\
     sudo\
     cmake\
+    git\
     libusb-1.0-0\
     libusb-1.0-0-dev\
     make\

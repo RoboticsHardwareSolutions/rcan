@@ -3,8 +3,10 @@
 
 #    include "u_can.h"
 #    include "stdio.h"
+#include "unistd.h"
 #    include "string.h"
-#    include "zmq.h"
+#include <nanomsg/nn.h>
+#include <nanomsg/bus.h>
 #    include <uuid/uuid.h>
 
 #    if defined(RCAN_UNIX)
@@ -28,6 +30,8 @@ static bool is_socket_can_iface(uint32_t channel);
 static bool is_vcan_iface(uint32_t channel);
 
 static bool is_virtual_can_iface(uint32_t channel);
+
+static int virtual_can_bind(rcan *can, uint32_t channel);
 
 static bool virtual_can_start(rcan *can, uint32_t channel, uint32_t bitrate);
 
@@ -212,6 +216,7 @@ bool u_can_receive(rcan *can, rcan_frame *frame) {
         return socet_can_read(can, frame);
 
 #    endif
+    return false;
 }
 
 /*********************************************  PCAN  *****************************************************************/
@@ -339,7 +344,7 @@ static bool peak_can_write(rcan *can, rcan_frame *frame) {
     return CAN_Write((unsigned short) can->channel, &message) == PCAN_ERROR_OK ? true : false;
 }
 
-/***************************************  ZEROMQ CAN   ****************************************************************/
+/***************************************  VIRTUAL CAN  ****************************************************************/
 
 static bool is_virtual_can_iface(uint32_t channel) {
     if (channel == VIRTUAL_CAN_BUS0 || channel == VIRTUAL_CAN_BUS1 || channel == VIRTUAL_CAN_BUS2)
@@ -348,74 +353,63 @@ static bool is_virtual_can_iface(uint32_t channel) {
     return false;
 }
 
+
+static int virtual_can_bind(rcan *can, uint32_t channel) {
+    char ipc[30];
+    int bus = channel - VIRTUAL_CAN_BUS0;
+    int node = 0;
+    for (int i = 0; i < RCAN_MAX_NODE_QUANTITY; i++) {
+
+        sprintf(ipc, "ipc:///tmp/bus%dnode%d.ipc", bus, node++);
+        if (nn_bind(can->fd, ipc) < 0)
+            continue;
+        else
+            return node - 1;
+
+    }
+    return -1;
+}
+
 static bool virtual_can_start(rcan *can, uint32_t channel, uint32_t bitrate) {
 
-    can->ctx = zmq_ctx_new();
+    bool uuid = false;
+    char ipc[30];
+    int bus = channel - VIRTUAL_CAN_BUS0;
 
-    if (can->ctx == NULL)
+    if ((can->fd = nn_socket(AF_SP, NN_BUS)) < 0)
         return false;
 
-    bool bind = false, connect = false, setopt = false, uuid = false;
-    can->pub = zmq_socket(can->ctx, ZMQ_PUB);
-    can->sub = zmq_socket(can->ctx, ZMQ_SUB);
+    int node = virtual_can_bind(can, channel);
 
-    if (zmq_bind(can->pub, "tcp://localhost:4040") == 0) // TODO add other port for other bus
-        bind = true;
-
-    if (zmq_connect(can->sub, "tcp://localhost:4040") == 0)  // TODO add other port for other bus
-        connect = true;
-
-    if (zmq_setsockopt(can->sub, ZMQ_SUBSCRIBE, 0, 0) == 0)
-        setopt = true;
-
-    uuid_generate_random(can->node_id);
-
-    if (!uuid_is_null(can->node_id))
-        uuid = true;
-
-    if (!(setopt && connect && setopt && uuid)) {
-        uuid_clear(can->node_id);
-        zmq_close(can->pub);
-        zmq_close(can->sub);
-        zmq_ctx_destroy(can->ctx);
+    if (node < 0)
         return false;
+
+    for (; node > 0; node--) {
+
+        sprintf(ipc, "ipc:///tmp/bus%dnode%d.ipc", bus, node - 1);
+        if (nn_connect(can->fd, ipc) < 0)
+            return false;
+
     }
     return true;
 }
 
+
 static bool virtual_can_read(rcan *can, rcan_frame *frame) {
 
-    virtual_can_frame virtual_frame;
-    int res = zmq_recv(can->sub, &virtual_frame, sizeof(virtual_frame), ZMQ_DONTWAIT);
-    if (res == -1 || res == 0) {
-        return false;
-    }
+    int recv = nn_recv(can->fd, frame, sizeof(rcan_frame), NN_DONTWAIT);
 
-    if (res == sizeof(virtual_frame)) {
-        if (uuid_compare(can->node_id, virtual_frame.uuid) == 0) { // self node message drop
-            return false;
-        }
-        /** real message */
-        memcpy(frame, &virtual_frame.can_frame, sizeof(rcan_frame));
+    if (recv == sizeof(rcan_frame))
         return true;
 
-    } else {
-
-        printf("fucking sheet will make portion buffer in other time :(\r\n"); // FIXME
-        return false;
-    }
+    return false;
 
 }
 
 
-
 static bool virtual_can_write(rcan *can, rcan_frame *frame) {
 
-    virtual_can_frame virtual_frame;
-    uuid_copy(virtual_frame.uuid, can->node_id);
-    memcpy(&virtual_frame.can_frame, frame, sizeof(rcan_frame));  // FIXME delete double copy
-
-    if (zmq_send(can->pub, &virtual_frame, sizeof(virtual_frame), 0) == -1)
+    if (nn_send(can->fd, frame, sizeof(rcan_frame), 0) < 0)
         return false;
 
     return true;
@@ -423,9 +417,7 @@ static bool virtual_can_write(rcan *can, rcan_frame *frame) {
 
 static bool virtual_can_stop(rcan *can) {
 
-    zmq_close(can->sub);
-    zmq_close(can->pub);
-    zmq_ctx_destroy(can->ctx);
+    nn_shutdown(can->fd, 0);
     return true;
 }
 

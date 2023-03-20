@@ -13,11 +13,8 @@
 
 struct can_iface {
     uint32_t channel;  // look defines in rcan_def.h
-    int fd; // for socket CAN
-    void *ctx;  // for virtual can (zeroMQ)
-    void *pub; // for virtual can (zeroMQ)
-    void *sub; // for virtual can (zeroMQ)
-    uuid_t node_id; // for virtual can (zeroMQ)
+    int fd;
+    uuid_t node_id; // for virtual can (virtual CAN)
     bool can_ready;
     rcan_filter filter;
     bool use_filter;

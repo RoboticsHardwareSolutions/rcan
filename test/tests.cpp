@@ -12,7 +12,17 @@
 #    include <iostream>
 #endif
 
-#if defined(RCAN_UNIX_TEST_VIRTUAL_CAN)
+
+
+#if defined(RCAN_UNIX_TEST_VIRTUAL_CAN_BUS)
+
+
+
+#endif //defined(RCAN_UNIX_TEST_VIRTUAL_CAN_BUS)
+
+
+#if defined(RCAN_UNIX_TEST_UNIX_VIRTUAL_CAN)
+
 #    include "pthread.h"
 #    include "stdlib.h"
 #    include "unistd.h"
