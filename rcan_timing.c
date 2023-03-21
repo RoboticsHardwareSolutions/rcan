@@ -4,7 +4,9 @@
 bool rcan_calculate_timing(uint32_t peripheral_clock_rate, uint32_t target_bitrate, rcan_timing* out_timings)
 {
     if (target_bitrate == 0 || peripheral_clock_rate == 0 || out_timings == NULL || target_bitrate < 1000)
+    {
         return false;
+    }
 
     /**
      * Hardware configuration
@@ -27,7 +29,9 @@ bool rcan_calculate_timing(uint32_t peripheral_clock_rate, uint32_t target_bitra
     uint8_t max_quanta_per_bit = (uint8_t) ((target_bitrate >= 1000000) ? 10 : 17);
 
     if (!(max_quanta_per_bit <= (max_bs1 + max_bs2)))
+    {
         return false;
+    }
 
     static const uint16_t max_sample_point_location_permill = 900;
 
@@ -53,7 +57,9 @@ bool rcan_calculate_timing(uint32_t peripheral_clock_rate, uint32_t target_bitra
     while ((prescaler_bs % (1U + bs1_bs2_sum)) != 0)
     {
         if (bs1_bs2_sum <= 2)
+        {
             return false;
+        }
 
         bs1_bs2_sum--;
     }
@@ -61,7 +67,9 @@ bool rcan_calculate_timing(uint32_t peripheral_clock_rate, uint32_t target_bitra
     uint32_t prescaler = prescaler_bs / (1U + bs1_bs2_sum);
 
     if ((prescaler < 1U) || (prescaler > 1024U))
+    {
         return false;
+    }
 
     /**
      * Now we have a constraint: (BS1 + BS2) == bs1_bs2_sum.
@@ -87,7 +95,9 @@ bool rcan_calculate_timing(uint32_t peripheral_clock_rate, uint32_t target_bitra
     uint8_t bs2 = (uint8_t) (bs1_bs2_sum - bs1);
 
     if (!(bs1_bs2_sum > bs1))
+    {
         return false;
+    }
 
     uint16_t sample_point_permill = (uint16_t) (1000U * (1U + bs1) / (1U + bs1 + bs2));
 
@@ -100,7 +110,9 @@ bool rcan_calculate_timing(uint32_t peripheral_clock_rate, uint32_t target_bitra
     bool valid = (bs1 >= 1) && (bs1 <= max_bs1) && (bs2 >= 1) && (bs2 <= max_bs2);
 
     if ((target_bitrate != (peripheral_clock_rate / (prescaler * (1U + bs1 + bs2)))) || !valid)
+    {
         return false;  // This actually means that the algorithm has a logic error
+    }
 
     out_timings->bit_rate_prescaler               = (uint16_t) prescaler;
     out_timings->max_resynchronization_jump_width = 1;  // One is recommended by CANOpen, and DeviceNet

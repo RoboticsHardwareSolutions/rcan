@@ -9,7 +9,9 @@
 bool rcan_filter_preconfiguration(rcan* can, uint32_t* accepted_ids, uint32_t size)
 {
     if (can == NULL || accepted_ids == NULL || size == 0)
+    {
         return false;
+    }
 
 #if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
     return u_can_filter_preconfiguration(can, accepted_ids, size);
@@ -28,7 +30,9 @@ bool rcan_filter_preconfiguration(rcan* can, uint32_t* accepted_ids, uint32_t si
 bool rcan_start(rcan* can, uint32_t channel, uint32_t bitrate)
 {
     if (can == NULL || channel == 0 || bitrate == 0)
+    {
         return false;
+    }
 
 #if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
     return u_can_start(can, channel, bitrate);
@@ -47,7 +51,9 @@ bool rcan_start(rcan* can, uint32_t channel, uint32_t bitrate)
 bool rcan_is_ok(rcan* can)
 {
     if (can == NULL)
+    {
         return false;
+    }
 
 #if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
     return u_can_is_ok(can);
@@ -66,7 +72,9 @@ bool rcan_is_ok(rcan* can)
 bool rcan_stop(rcan* can)
 {
     if (can == NULL)
+    {
         return false;
+    }
 
 #if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
     return u_can_stop(can);
@@ -85,7 +93,9 @@ bool rcan_stop(rcan* can)
 bool rcan_send(rcan* can, rcan_frame* frame)
 {
     if (can == NULL || frame == NULL || frame->type == nonframe || frame->len > RCAN_MAX_FRAME_PAYLOAD_SIZE)
+    {
         return false;
+    }
 
 #if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
     return u_can_send(can, frame);
@@ -104,7 +114,9 @@ bool rcan_send(rcan* can, rcan_frame* frame)
 bool rcan_receive(rcan* can, rcan_frame* frame)
 {
     if (can == NULL || frame == NULL)
+    {
         return false;
+    }
 
 #if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
     return u_can_receive(can, frame);
@@ -123,7 +135,9 @@ bool rcan_receive(rcan* can, rcan_frame* frame)
 void rcan_view_frame(rcan_frame* frame)
 {
     if (frame == NULL)
+    {
         return;
+    }
 
     if (frame->rtr)
     {

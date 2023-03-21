@@ -7,7 +7,6 @@ if (MSVC OR MSYS OR MINGW)
     find_package(nanomsg CONFIG REQUIRED)
     #set(PCBUSB_LIBRARIES PCANBasic.lib -static gcc stdc++ winpthread -dynamic)
     set(PCAN_LIBRARIES PCANBasic.lib)
-
     file(COPY ${CMAKE_CURRENT_LIST_DIR}/thirdparty/PCAN-Basic-windows/PCANBasic.dll DESTINATION ${PROJECT_BINARY_DIR})
     add_definitions(-DRCAN_WINDOWS)
     set(RCAN_LIBRARIES "${PCAN_LIBRARIES}")
@@ -22,7 +21,6 @@ if (APPLE)
     add_definitions(-DRCAN_MACOS)
     set(RCAN_LIBRARIES "${PCAN_LIBRARIES}")
     set(RCAN_LIBRARIES ${RCAN_LIBRARIES} "${NANOMSG_LIBRARIES}")
-
 endif ()
 
 
@@ -34,7 +32,6 @@ if (UNIX AND NOT APPLE)
     set(RCAN_LIBRARIES ${PCBUSB_LIBRARIES})
     set(RCAN_LIBRARIES ${RCAN_LIBRARIES} socketcan)
     set(RCAN_LIBRARIES ${RCAN_LIBRARIES} nanomsg)
-    set(RCAN_LIBRARIES ${RCAN_LIBRARIES} uuid)
 endif ()
 
 set(RCAN_DIRECTORIES ${RCAN_DIRECTORIES}  ${CMAKE_CURRENT_LIST_DIR})

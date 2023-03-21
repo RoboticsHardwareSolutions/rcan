@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.9)
 project(rcan_test C CXX)
 enable_testing()
 
 include(${CMAKE_CURRENT_LIST_DIR}/../librcan.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/../Findlibzmq.cmake)
+
 
 set(CTEST_OUTPUT_ON_FAILURE ON)
 set(library_dir1 "${CMAKE_CURRENT_LIST_DIR}/../")
@@ -43,7 +43,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CXX_EXTENSIONS OFF)
 
 
-
 add_compile_options(
         -Wall -Wextra  -pedantic -fstrict-aliasing -Wdouble-promotion -Wswitch-enum -Wfloat-equal -Wundef
         -Wconversion -Wtype-limits -Wsign-conversion -Wcast-align
@@ -52,10 +51,21 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Woverloaded-virtual -Wnon-virtual-dtor 
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/catch/  ${library_dir1} ${library_dir2} ${library_dir3} ${library_dir4} )
 add_definitions(-DCATCH_CONFIG_FAST_COMPILE=1 -DCATCH_CONFIG_ENABLE_ALL_STRINGMAKERS=1)
-add_definitions(-DRCAN_UNIX)
+
+if (MSVC OR MSYS OR MINGW)
+    add_definitions(-DRCAN_WINDOWS)
+endif ()
+
+if (APPLE)
+    add_definitions(-DRCAN_MACOS)
+endif ()
+
+if (UNIX AND NOT APPLE)
+    add_definitions(-DRCAN_UNIX)
+endif ()
 
 set(common_sources
-        tests.cpp
+        test.c
         ${CMAKE_CURRENT_LIST_DIR}/../rcan.c
         ${CMAKE_CURRENT_LIST_DIR}/../can/u_can.c
         ${CMAKE_CURRENT_LIST_DIR}/../rcan_filter.c)
