@@ -1,7 +1,7 @@
 #pragma once
 
 #if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F407xx) || defined(STM32F429xx)
+    defined(STM32F103xB) || defined(STM32F407xx) || defined(STM32F429xx) || defined(STM32F103xE)
 
 #    include "stdbool.h"
 #    include "rcan_def.h"
@@ -9,7 +9,7 @@
 #    include "rcan_timing.h"
 #    include "rcan_filter.h"
 
-#    if defined(STM32F103xB)
+#    if defined(STM32F103xB) || defined(STM32F103xE)
 
 #        include "stm32f1xx_hal.h"
 
