@@ -51,10 +51,10 @@ bool u_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
 
 #    if defined(RCAN_WINDOWS) || defined(RCAN_MACOS)
 
-    if (!is_correct_bitrate_for_pcan(bitrate))
-        return false;
-
     uint32_t pcan_bitrate = convert_to_pcan_bitrate(bitrate);
+
+        if (!pcan_bitrate)
+            return false;
 
     success = pcan_start(can, channel, pcan_bitrate);
 
@@ -64,10 +64,10 @@ bool u_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
 
     if (is_pcan_iface(channel))
     {
-        if (!is_correct_bitrate_for_pcan(bitrate))
-            return false;
-
         uint32_t pcan_bitrate = convert_to_pcan_bitrate(bitrate);
+
+        if (!pcan_bitrate)
+            return false;
 
         success = pcan_start(can, channel, pcan_bitrate);
     }
