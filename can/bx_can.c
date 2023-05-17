@@ -1,6 +1,6 @@
 
 #if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx)
+    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined (STM32F103xE)
 
 #    include "bx_can.h"
 
@@ -182,19 +182,23 @@ static bool bx_can_set_filter(rcan* can)
         sFilterConfig.FilterBank = 1;
     }
 
-#    elif defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB)
+#    elif defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F103xB)
+    #if defined(CAN2)
     if (can->handle.Instance == CAN2)
     {
         sFilterConfig.FilterBank = 1;
     }
-    if (can->handle.Instance == CAN1)
-    {
-        sFilterConfig.FilterBank = 0;
-    }
+    #elif defined(CAN3)
     if (can->handle.Instance == CAN3)
     {
         sFilterConfig.FilterBank = 2;
     }
+    #else
+    if (can->handle.Instance == CAN1)
+    {
+        sFilterConfig.FilterBank = 0;
+    }
+    #endif
 #    elif defined(STM32F407xx) || defined(STM32F429xx)
     if (can->handle.Instance == CAN2)
     {
@@ -211,16 +215,24 @@ static bool bx_can_set_filter(rcan* can)
     }
 #    endif
 
-    sFilterConfig.FilterIdHigh = (uint16_t) can->filter.mask_filter.id >> 13;
-    sFilterConfig.FilterIdLow  = (uint16_t) (can->filter.mask_filter.id << 3) | CAN_ID_EXT;
+    if(can->filter.is_extended){
+        sFilterConfig.FilterIdHigh = (uint16_t) (can->filter.mask_filter.id >> 13);
+        sFilterConfig.FilterIdLow = (uint16_t) ((can->filter.mask_filter.id  << 3 ) | CAN_ID_EXT);
 
-    sFilterConfig.FilterMaskIdHigh = (uint16_t) can->filter.mask_filter.mask >> 13;
-    sFilterConfig.FilterMaskIdLow  = (uint16_t) (can->filter.mask_filter.mask << 3) | CAN_ID_EXT;
+        sFilterConfig.FilterMaskIdHigh = (uint16_t) (can->filter.mask_filter.mask >> 13);
+        sFilterConfig.FilterMaskIdLow = (uint16_t) ((can->filter.mask_filter.mask << 3 ) | CAN_ID_EXT);
+    } else {
+        sFilterConfig.FilterIdHigh = (uint16_t) (can->filter.mask_filter.id << 5);
+        sFilterConfig.FilterIdLow = (uint16_t) 0;
+
+        sFilterConfig.FilterMaskIdHigh = (uint16_t) (can->filter.mask_filter.mask << 5);
+        sFilterConfig.FilterMaskIdLow = (uint16_t) 0;
+    }
 
     sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
     sFilterConfig.FilterMode  = CAN_FILTERMODE_IDMASK;
 
-    sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0 | CAN_RX_FIFO1;
+    sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
 
     sFilterConfig.FilterActivation     = ENABLE;
     sFilterConfig.SlaveStartFilterBank = 0;

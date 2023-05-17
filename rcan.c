@@ -16,7 +16,7 @@ bool rcan_filter_preconfiguration(rcan* can, uint32_t* accepted_ids, uint32_t si
 #endif
 
 #if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx)
+    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
     return bx_can_filter_preconfiguration(can, accepted_ids, size);
 #endif
 
@@ -35,7 +35,7 @@ bool rcan_start(rcan* can, uint32_t channel, uint32_t bitrate)
 #endif
 
 #if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx)
+    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
     return bx_can_start(can, channel, bitrate);
 #endif
 
@@ -54,7 +54,7 @@ bool rcan_is_ok(rcan* can)
 #endif
 
 #if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx)
+    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
     return bx_can_is_ok(can);
 #endif
 
@@ -73,7 +73,7 @@ bool rcan_stop(rcan* can)
 #endif
 
 #if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx)
+    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
     return bx_can_stop(can);
 #endif
 
@@ -92,7 +92,7 @@ bool rcan_send(rcan* can, rcan_frame* frame)
 #endif
 
 #if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx)
+    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
     return bx_can_send(can, frame);
 #endif
 
@@ -111,7 +111,7 @@ bool rcan_receive(rcan* can, rcan_frame* frame)
 #endif
 
 #if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx)
+    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
     return bx_can_receive(can, frame);
 #endif
 
