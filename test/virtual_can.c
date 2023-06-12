@@ -312,7 +312,7 @@ void test_virtual_can_receive_ext_rtr_frame(void)
 
 void test_virtual_can(void)
 {
-    printf("testvirtual can\n");
+    printf("test virtual can\n");
     test_virtual_can_start_stop();
     test_virtual_can_start_stop_twice();
     test_virtual_can_invalid_arg();

@@ -10,6 +10,8 @@ include(rcmake_macros/clang.cmake)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# -DTEST_TARGET=hardware_macos
+
 if (TEST_TARGET STREQUAL "virtual_can")
     message("Compile test for virtual_can")
     add_definitions(-DRCAN_UNIX_TEST_UNIX_VIRTUAL_CAN=1)
@@ -20,8 +22,8 @@ elseif (TEST_TARGET STREQUAL "hardware_macos")
     message("Compile test for hardware_macos")
     add_definitions(-DRCAN_HARDWARE_MACOS_TEST=1)
 elseif (TEST_TARGET STREQUAL "hardware_unix")
-    message("Compile test for hardware_macos")
-    add_definitions(-DCAN_HARDWARE_UNIX_TEST=1)
+    message("Compile test for hardware_unix")
+    add_definitions(-DRCAN_HARDWARE_UNIX_TEST=1)
 else ()
     message(FATAL_ERROR "TEST_TARGET should be specified")
 endif ()
@@ -89,6 +91,7 @@ set(RCAN_FILES
 
 set(TEST_SRC_FILES
         test/hardware_unix.c
+        test/hardware_macos.c
         test/virtual_bus.c
         test/virtual_can.c
         test/test.c)
