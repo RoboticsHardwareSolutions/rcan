@@ -117,7 +117,7 @@ extern "C" {
 #define PCAN_ERROR_ILLNET        0x01800U  //!< Net handle is invalid
 #define PCAN_ERROR_ILLCLIENT     0x01C00U  //!< Client handle is invalid
 #define PCAN_ERROR_ILLHANDLE     (PCAN_ERROR_ILLHW | PCAN_ERROR_ILLNET | PCAN_ERROR_ILLCLIENT)  //!< Mask for all handle errors
-#define PCAN_ERROR_RESOURCE      0x02000U  //!< Resource (FIFO, Client, timeout) cannot be created
+#define PCAN_ERROR_RESOURCE      0x02000U  //!< Resource (FIFO, Client, timeout) cannot be virtual_can_ready
 #define PCAN_ERROR_ILLPARAMTYPE  0x04000U  //!< Invalid parameter
 #define PCAN_ERROR_ILLPARAMVAL   0x08000U  //!< Invalid parameter value
 #define PCAN_ERROR_UNKNOWN       0x10000U  //!< Unknown error
@@ -190,7 +190,7 @@ extern "C" {
 #define PCAN_PARAMETER_OFF       0x00U  //!< The PCAN parameter is not set (inactive)
 #define PCAN_PARAMETER_ON        0x01U  //!< The PCAN parameter is set (active)
 #define PCAN_FILTER_CLOSE        0x00U  //!< The PCAN filter is closed. No messages will be received
-#define PCAN_FILTER_OPEN         0x01U  //!< The PCAN filter is fully opened. All messages will be received
+#define PCAN_FILTER_OPEN         0x01U  //!< The PCAN filter is fully socket_can_ready. All messages will be received
 #define PCAN_FILTER_CUSTOM       0x02U  //!< The PCAN filter is custom configured. Only registered messages will be received
 #define PCAN_CHANNEL_UNAVAILABLE 0x00U  //!< The PCAN-Channel handle is illegal, or its associated hardware is not available
 #define PCAN_CHANNEL_AVAILABLE   0x01U  //!< The PCAN-Channel handle is available to be connected (Plug&Play Hardware: it means furthermore that the hardware is plugged-in)
