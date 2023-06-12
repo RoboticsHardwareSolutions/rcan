@@ -29,7 +29,7 @@ bool rcan_filter_preconfiguration(rcan* can, uint32_t* accepted_ids, uint32_t si
 
 bool rcan_start(rcan* can, uint32_t channel, uint32_t bitrate)
 {
-    if (can == NULL || channel == 0 || bitrate == 0)
+    if (can == NULL || channel == 0)
     {
         return false;
     }

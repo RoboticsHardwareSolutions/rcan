@@ -1,4 +1,4 @@
-#include "runit.h"
+#include "../runit/src/runit.h"
 #include "rcan.h"
 
 #if defined(RCAN_HARDWARE_UNIX_TEST)

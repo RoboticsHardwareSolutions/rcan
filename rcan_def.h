@@ -31,7 +31,7 @@ typedef struct
 
 #define RCAN_EXT_ID_MAX 0x1FFFFFFFU
 #define RCAN_STD_ID_MAX 0x000007FFU
-#define RCAN_MAX_NODE_QUANTITY 32
+
 
 /**
  * argument uint32_t channel in function rcan_start(..)
@@ -53,9 +53,13 @@ typedef struct
 #define SOCKET_VCAN1 0x1235UL
 #define SOCKET_VCAN2 0x1236UL
 
-#define VIRTUAL_CAN_BUS0 0x1237UL
-#define VIRTUAL_CAN_BUS1 0x1238UL
-#define VIRTUAL_CAN_BUS2 0x1239UL
+#define VIRTUAL_INPROC_CAN_BUS0 0x1237UL  // bus for inter thread communication
+#define VIRTUAL_INPROC_CAN_BUS1 0x1238UL
+#define VIRTUAL_INPROC_CAN_BUS2 0x1239UL
+
+#define VIRTUAL_IPC_CAN_BUS0 0x1240UL  // bus for inter process communication
+#define VIRTUAL_IPC_CAN_BUS1 0x1241UL
+#define VIRTUAL_IPC_CAN_BUS2 0x1242UL
 
 #if defined(RCAN_MACOS)
 

@@ -14,7 +14,7 @@ Checks: >-
   modernize-*,
   performance-*,
   portability-*,
-  readability-*,
+#  readability-*,
   -hicpp-function-size,
   -google-readability-todo,
   -google-runtime-references,

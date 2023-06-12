@@ -5,9 +5,8 @@
 #    include "stdio.h"
 #    include "unistd.h"
 #    include "string.h"
-#    include <nanomsg/nn.h>
-#    include <nanomsg/bus.h>
 #    include <uuid/uuid.h>
+#    include "u_can_urls.h"
 
 #    if defined(RCAN_UNIX)
 
@@ -78,7 +77,7 @@ bool u_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
         {
             return false;
         }
-
+        usleep(1000);
         can->channel   = channel;
         can->can_ready = true;
         return true;
@@ -417,87 +416,46 @@ static bool peak_can_write(rcan* can, rcan_frame* frame)
 
 static bool is_virtual_can_iface(uint32_t channel)
 {
-    if (channel == VIRTUAL_CAN_BUS0 || channel == VIRTUAL_CAN_BUS1 || channel == VIRTUAL_CAN_BUS2)
+    if (channel == VIRTUAL_INPROC_CAN_BUS0 || channel == VIRTUAL_INPROC_CAN_BUS1 ||
+        channel == VIRTUAL_INPROC_CAN_BUS2 || channel == VIRTUAL_IPC_CAN_BUS0 || channel == VIRTUAL_IPC_CAN_BUS1 ||
+        channel == VIRTUAL_IPC_CAN_BUS2)
     {
         return true;
     }
-
     return false;
 }
 
-static int virtual_can_bind(rcan* can, uint32_t channel)
+static bool is_ipc(uint32_t channel)
 {
-    char ipc[30];
-    int  bus  = (int) (channel - VIRTUAL_CAN_BUS0);
-    int  node = 0;
-    for (int i = 0; i < RCAN_MAX_NODE_QUANTITY; i++)
+    if (channel == VIRTUAL_IPC_CAN_BUS0 || channel == VIRTUAL_IPC_CAN_BUS1 || channel == VIRTUAL_IPC_CAN_BUS2)
     {
-        sprintf(ipc, "ipc:///tmp/bus%dnode%d.ipc", bus, node++);
-        if (nn_bind(can->fd, ipc) >= 0)
-        {
-            return node - 1;
-        }
+        return true;
     }
-    return -1;
+    return false;
 }
 
 static bool virtual_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
 {
-    (void) bitrate;
-    bool uuid = false;
-    char ipc[30];
-    int  bus = (int) (channel - VIRTUAL_CAN_BUS0);
+    char url[30];
+    int  bus = is_ipc(channel) ? (channel - VIRTUAL_IPC_CAN_BUS0) : (channel - VIRTUAL_INPROC_CAN_BUS0);
 
-    can->fd = nn_socket(AF_SP, NN_BUS);
-    if (can->fd < 0)
-    {
-        return false;
-    }
-
-    int node = virtual_can_bind(can, channel);
-
-    if (node < 0)
-    {
-        return false;
-    }
-
-    for (; node > 0; node--)
-    {
-        sprintf(ipc, "ipc:///tmp/bus%dnode%d.ipc", bus, node - 1);
-        if (nn_connect(can->fd, ipc) < 0)
-        {
-            return false;
-        }
-    }
-    return true;
+    sprintf(url, "%sbus%dnode", is_ipc(channel) ? URL_CAN_INTER_PROC : URL_CAN_INPROC, bus);
+    return rnode_create(&can->node, url);
 }
 
 static bool virtual_can_read(rcan* can, rcan_frame* frame)
 {
-    int recv = nn_recv(can->fd, frame, sizeof(rcan_frame), NN_DONTWAIT);
-
-    if (recv == sizeof(rcan_frame))
-    {
-        return true;
-    }
-
-    return false;
+    return rnode_receive(&can->node, frame, sizeof(rcan_frame));
 }
 
 static bool virtual_can_write(rcan* can, rcan_frame* frame)
 {
-    if (nn_send(can->fd, frame, sizeof(rcan_frame), 0) < 0)
-    {
-        return false;
-    }
-
-    return true;
+    return rnode_send(&can->node, frame, sizeof(rcan_frame));
 }
 
 static bool virtual_can_stop(rcan* can)
 {
-    nn_shutdown(can->fd, 0);
-    return true;
+    return rnode_delete(&can->node);
 }
 
 /***************************************  SOCET CAN   *****************************************************************/

@@ -9,26 +9,17 @@
 #    include "rcan.h"
 #    include "rcan_timing.h"
 #    include "rcan_filter.h"
+#    include "rnode/rnode.h"
 
 struct can_iface
 {
-    uint32_t    channel;  // look defines in rcan_def.h
-    int         fd;
-    uuid_t      node_id;  // for virtual can (virtual CAN)
-    bool        can_ready;
-    rcan_filter filter;
-    bool        use_filter;
+    uint32_t     channel;  // look defines in rcan_def.h
+    int          fd;
+    bool         can_ready;
+    struct rnode node;
+    rcan_filter  filter;
+    bool         use_filter;
 };
-
-#    pragma pack(push)
-#    pragma pack(1)
-typedef struct
-{
-    uuid_t     uuid;
-    rcan_frame can_frame;
-
-} virtual_can_frame;
-#    pragma pack(pop)
 
 typedef struct can_iface rcan;
 

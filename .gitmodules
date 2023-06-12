@@ -1,3 +1,6 @@
 [submodule "test/runit"]
 	path = test/runit
 	url = git@gitlab.com:RoboticsHardwareSolutions/rlibs/runit.git
+[submodule "rnode"]
+	path = rnode
+	url = git@gitlab.com:RoboticsHardwareSolutions/rlibs/rnode.git
