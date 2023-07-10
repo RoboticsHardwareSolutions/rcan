@@ -98,9 +98,8 @@ bool u_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
     peak   = is_peak_can_iface(channel);
     if (peak)
     {
-        {
-            uint32_t peak_can_bitrate = convert_to_peak_can_bitrate(bitrate);
-        }
+        uint32_t peak_can_bitrate = convert_to_peak_can_bitrate(bitrate);
+
         if (!peak_can_bitrate)
         {
             return false;
