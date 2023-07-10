@@ -77,7 +77,7 @@ set(RCAN_SRC_FILES
         can/bx_can.c
         can/bx_canfd.c
         can/u_can.c
-        can/bx_can.h
+        can/bx_can.c
         can/bx_canfd.h)
 
 set(RCAN_FILES
