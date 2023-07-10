@@ -32,7 +32,6 @@ typedef struct
 #define RCAN_EXT_ID_MAX 0x1FFFFFFFU
 #define RCAN_STD_ID_MAX 0x000007FFU
 
-
 /**
  * argument uint32_t channel in function rcan_start(..)
  */

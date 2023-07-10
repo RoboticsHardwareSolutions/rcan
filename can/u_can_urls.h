@@ -5,4 +5,3 @@
 #define URL_CAN_INTER_PROC "ipc:///tmp/"
 
 #endif
-

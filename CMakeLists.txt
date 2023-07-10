@@ -6,7 +6,7 @@ project(rcan
         "cross platform lib with simple C API for work with CAN BUS")
 
 include(rcmake_macros/rcmake_macros.cmake)
-include(rcmake_macros/clang.cmake)
+
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -67,6 +67,7 @@ set(RCAN_HEADER
         can/bx_canfd.h
         can/bx_can.h
         can/u_can.h
+        can/u_can_urls.h
         )
 
 set(RCAN_SRC_FILES
@@ -114,6 +115,7 @@ target_include_directories(rcan
         PRIVATE can/
         PRIVATE ${RCAN_THIRDPARTY})
 
+include(rcmake_macros/clang.cmake)
 
 # Test runner executable testing the static library
 add_executable(testrcan

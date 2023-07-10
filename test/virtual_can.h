@@ -4,4 +4,3 @@
 void test_virtual_can(void);
 
 #endif
-

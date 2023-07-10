@@ -49,8 +49,7 @@ void test_hardware_macos_send_std_frame(void)
     runit_true(rcan_start(&pcan2, PEAK_CAN_USBBUS2, PCAN_BAUD_10K));
     runit_true(rcan_send(&pcan1, &frame_sended));
     while (!rcan_receive(&pcan2, &frame_received))
-    {
-    }
+    {}
     runit_true(rcan_stop(&pcan1));
     runit_true(rcan_stop(&pcan2));
     runit_true(memcmp(&frame_received, &frame_sended, sizeof(rcan_frame)) == 0);
@@ -71,8 +70,7 @@ void test_hardware_macos_send_ext_frame(void)
     runit_true(rcan_start(&pcan2, PEAK_CAN_USBBUS2, 1250000));
     runit_true(rcan_send(&pcan1, &frame_sended));
     while (!rcan_receive(&pcan2, &frame_received))
-    {
-    }
+    {}
     runit_true(rcan_stop(&pcan1) == true);
     runit_true(rcan_stop(&pcan2) == true);
     runit_true(memcmp(&frame_received, &frame_sended, sizeof(rcan_frame)) == 0);
@@ -91,8 +89,7 @@ void test_hardware_macos_send_rtr_frame(void)
     runit_true(rcan_start(&pcan2, PEAK_CAN_USBBUS2, 1000000));
     runit_true(rcan_send(&pcan1, &frame_sended));
     while (!rcan_receive(&pcan2, &frame_received))
-    {
-    }
+    {}
     runit_true(rcan_stop(&pcan1));
     runit_true(rcan_stop(&pcan2));
     runit_true(memcmp(&frame_received, &frame_sended, sizeof(rcan_frame)) == 0);
@@ -112,8 +109,7 @@ void test_hardware_macos_send_ext_rtr_frame(void)
     runit_true(rcan_start(&pcan2, PEAK_CAN_USBBUS2, 500000));
     runit_true(rcan_send(&pcan1, &frame_sended));
     while (!rcan_receive(&pcan2, &frame_received))
-    {
-    }
+    {}
     runit_true(rcan_stop(&pcan1));
     runit_true(rcan_stop(&pcan2));
     runit_true(memcmp(&frame_received, &frame_sended, sizeof(rcan_frame)) == 0);
@@ -135,7 +131,6 @@ void test_hardware_macos_send_invalid(void)
     runit_false(rcan_send(&pcan1, &frame_sended));
     runit_true(rcan_start(&pcan1, PEAK_CAN_USBBUS1, 10000));
     runit_true(rcan_send(&pcan1, &frame_sended));
-
 
     frame_sended.len = 9;
     runit_false(rcan_send(&pcan1, &frame_sended));
