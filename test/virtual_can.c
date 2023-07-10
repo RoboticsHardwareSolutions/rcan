@@ -222,7 +222,7 @@ void test_virtual_can_invalid_frame(void)
     runit_true(rcan_start(&vcan0, SOCKET_VCAN0, 1000000));
     runit_true(rcan_send(&vcan0, &frame));
 
-    frame.len = CAN_MAX_DLC + 1;
+    frame.len = 8 + 1;
     runit_false(rcan_send(&vcan0, &frame));
     frame.len = 8;
 
