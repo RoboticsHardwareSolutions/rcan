@@ -2,8 +2,6 @@
 
 #if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
 
-#    include <uuid/uuid.h>
-
 #    include "stdbool.h"
 #    include "rcan_def.h"
 #    include "rcan.h"
