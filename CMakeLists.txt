@@ -24,8 +24,6 @@ elseif (TEST_TARGET STREQUAL "hardware_macos")
 elseif (TEST_TARGET STREQUAL "hardware_unix")
     message("Compile test for hardware_unix")
     add_definitions(-DRCAN_HARDWARE_UNIX_TEST=1)
-else ()
-    message(FATAL_ERROR "TEST_TARGET should be specified")
 endif ()
 
 
