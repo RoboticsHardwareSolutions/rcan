@@ -132,6 +132,8 @@ target_link_libraries(testrcan
         PUBLIC rcan
         PUBLIC ${RCAN_LIBRARIES} runit)
 
+add_subdirectory(test/runit)
+
 #print_all_variables()
 enable_testing()
 add_test(NAME testrcan COMMAND ./testrcan)
