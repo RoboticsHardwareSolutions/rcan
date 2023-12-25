@@ -68,7 +68,7 @@ set(RCAN_HEADER
         can/bx_can.h
         can/u_can.h
         can/u_can_urls.h
-        )
+)
 
 set(RCAN_SRC_FILES
         ${RCAN_HEADER}
@@ -85,7 +85,7 @@ set(RCAN_FILES
         ${RCAN_HEADER}
         ${RCAN_SRC_FILES}
         ${RCAN_THIRDPARTY}
-        )
+)
 
 
 set(TEST_SRC_FILES
@@ -106,35 +106,38 @@ set(FILES_FOR_FORMATTING
         ${TEST_HEADER_FILES}
         ${RCAN_SRC_FILES}
         ${RCAN_HEADER}
-        )
+)
 
 
-add_library(rcan STATIC ${RCAN_FILES})
-target_include_directories(rcan
+add_library(${PROJECT_NAME} STATIC ${RCAN_FILES})
+target_include_directories(${PROJECT_NAME}
         PUBLIC ./
         PRIVATE can/
         PRIVATE ${RCAN_THIRDPARTY})
 
 include(rcmake_macros/clang.cmake)
 
+
 # Test runner executable testing the static library
-add_executable(testrcan
-        ${TEST_FRAMEWORK_SRC}
-        ${TEST_SRC_FILES})
-target_include_directories(testrcan
-        PUBLIC ./
-        PRIVATE can/
-        PRIVATE test/
-        PRIVATE test/runit/
-        PRIVATE ${RCAN_THIRDPARTY} )
+if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Generic)
+    add_executable(${PROJECT_NAME}_test
+            ${TEST_FRAMEWORK_SRC}
+            ${TEST_SRC_FILES})
+    target_include_directories(${PROJECT_NAME}_test
+            PUBLIC ./
+            PRIVATE can/
+            PRIVATE test/
+            PRIVATE test/runit/
+            PRIVATE ${RCAN_THIRDPARTY})
 
-target_link_libraries(testrcan
-        PUBLIC rcan
-        PUBLIC ${RCAN_LIBRARIES} runit)
+    target_link_libraries(${PROJECT_NAME}_test
+            PUBLIC rcan
+            PUBLIC ${RCAN_LIBRARIES} runit)
 
-add_subdirectory(test/runit)
+    add_subdirectory(test/runit)
 
-#print_all_variables()
-enable_testing()
-add_test(NAME testrcan COMMAND ./testrcan)
-add_test(NAME testrcanshared COMMAND ./testrcanshared)
+    #print_all_variables()
+    enable_testing()
+    add_test(NAME ${PROJECT_NAME}_test COMMAND ./testrcan)
+    add_test(NAME ${PROJECT_NAME}_testshared COMMAND ./testrcanshared)
+endif ()
