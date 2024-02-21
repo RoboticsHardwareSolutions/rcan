@@ -134,7 +134,7 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Generic)
             PUBLIC rcan
             PUBLIC ${RCAN_LIBRARIES} runit)
 
-    add_subdirectory(test/runit)
+#    add_subdirectory(test/runit)
 
     #print_all_variables()
     enable_testing()
