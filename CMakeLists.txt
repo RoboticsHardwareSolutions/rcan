@@ -10,7 +10,6 @@ include(rcmake_macros/rcmake_macros.cmake)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# -DTEST_TARGET=hardware_macos
 
 if (TEST_TARGET STREQUAL "virtual_can")
     message("Compile test for virtual_can")
@@ -31,7 +30,7 @@ if (MSVC OR MSYS OR MINGW)
     set(RCAN_THIRDPARTY ${CMAKE_CURRENT_LIST_DIR}/thirdparty/PCAN-Basic-windows)
     link_directories(${RCAN_DIRECTORIES})
     find_package(nanomsg CONFIG REQUIRED)
-    #set(PCBUSB_LIBRARIES PCANBasic.lib -static gcc stdc++ winpthread -dynamic)
+    set(PCBUSB_LIBRARIES PCANBasic.lib -static gcc stdc++ winpthread -dynamic)
     set(PCAN_LIBRARIES PCANBasic.lib)
     file(COPY ${CMAKE_CURRENT_LIST_DIR}/thirdparty/PCAN-Basic-windows/PCANBasic.dll DESTINATION ${PROJECT_BINARY_DIR})
     add_definitions(-DRCAN_WINDOWS)
@@ -117,7 +116,6 @@ target_include_directories(${PROJECT_NAME}
 
 include(rcmake_macros/clang.cmake)
 
-
 # Test runner executable testing the static library
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Generic)
     add_executable(${PROJECT_NAME}_test
@@ -134,9 +132,6 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Generic)
             PUBLIC rcan
             PUBLIC ${RCAN_LIBRARIES} runit)
 
-#    add_subdirectory(test/runit)
-
-    #print_all_variables()
     enable_testing()
     add_test(NAME ${PROJECT_NAME}_test COMMAND ./testrcan)
     add_test(NAME ${PROJECT_NAME}_testshared COMMAND ./testrcanshared)
