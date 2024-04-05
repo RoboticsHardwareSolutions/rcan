@@ -27,7 +27,7 @@ bool bx_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
     can->handle.Init.AutoWakeUp           = DISABLE;
     can->handle.Init.AutoRetransmission   = ENABLE;
     can->handle.Init.ReceiveFifoLocked    = DISABLE;
-    can->handle.Init.TransmitFifoPriority = DISABLE;
+    can->handle.Init.TransmitFifoPriority = ENABLE;
 
     if (!bx_can_set_timing(can, bitrate))
         return false;
@@ -43,42 +43,52 @@ bool bx_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
 
 bool bx_can_is_ok(rcan* can)
 {
-    if (HAL_CAN_GetError(&can->handle) != HAL_CAN_ERROR_NONE)
-    {
-        return false;
-    }
-    if (HAL_CAN_GetState(&can->handle) == HAL_CAN_STATE_RESET)
-    {
-        return false;
-    }
-    if (HAL_CAN_GetState(&can->handle) == HAL_CAN_STATE_ERROR)
-    {
-        return false;
-    }
-    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR0))
-    {
-        return false;
-    }
-    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR1))
-    {
-        return false;
-    }
-    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR2))
-    {
-        return false;
-    }
-    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV0))
-    {
-        return false;
-    }
-    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV1))
-    {
-        return false;
-    }
-    // (__HAL_CAN_CLEAR_FLAG(&can->handle, CAN_FLAG_RX_FIFO0_MESSAGE_LOST);
-    // TODO check any variants of error !!!!
 
-    return true;
+    uint8_t tec = (can->handle.Instance->ESR >> 16) & 0xFF;
+    uint8_t rec = (can->handle.Instance->ESR >> 24) & 0xFF;
+    uint8_t lec = (can->handle.Instance->ESR >> 4) & 0x03;
+
+
+
+    can->errors = CE_OK;
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_EPV))
+    {
+        can->errors = CE_EPV;
+    }
+    else if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR0) || __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR1) ||
+             __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR2))
+    {
+        can->errors = CE_XMTFULL;
+    }
+    else if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV0) || __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV1))
+    {
+        can->errors = CE_OVERRUN;
+    }
+    if ((HAL_CAN_GetState(&can->handle) == HAL_CAN_STATE_ERROR))
+        can->errors = CE_OTHER;
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_ERRI))
+        can->errors = CE_OTHER1;
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_ALST0))
+        can->errors = CE_OTHER2;
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_ALST1))
+        can->errors = CE_OTHER3;
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_ALST2))
+        can->errors = CE_OTHER4;
+
+    if ((HAL_CAN_GetError(&can->handle) != HAL_CAN_ERROR_NONE))
+        can->errors = CE_OTHER5;
+
+    if(rec > 0)
+        can->errors = CE_OTHER6;
+    else if(lec > 0)
+        can->errors = CE_OTHER7;
+    else if(tec > 0)
+        can->errors = CE_OTHER8;
+
+    if (can->errors == CE_OK)
+        return true;
+    else
+        return false;
 }
 
 bool bx_can_stop(rcan* can)

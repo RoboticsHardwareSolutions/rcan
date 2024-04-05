@@ -33,12 +33,36 @@
 
 #    endif
 
+typedef enum
+{
+    CE_OK,
+    CE_EPV,
+    /*
+     * Error Passive Flag
+     * Set when the Error Passive limit has been reached
+     * (Receive Error Counter or Transmit Error Counter greater than 127).
+     * This Flag is cleared only by hardware.
+     */
+    CE_XMTFULL, /* Transmit buffer in CAN controller is full */
+    CE_OVERRUN,  /* CAN controller was read too late */
+    CE_OTHER,
+    CE_OTHER1,
+    CE_OTHER2,
+    CE_OTHER3,
+    CE_OTHER4,
+    CE_OTHER5,
+    CE_OTHER6,
+    CE_OTHER7,
+    CE_OTHER8,
+} can_errors_t;
+
 struct can_iface
 {
     CAN_HandleTypeDef handle;
     rcan_timing       timing;
     rcan_filter       filter;
     bool              use_filter;
+    can_errors_t      errors;
 };
 
 typedef struct can_iface rcan;
