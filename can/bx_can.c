@@ -27,7 +27,7 @@ bool bx_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
     can->handle.Init.AutoWakeUp           = DISABLE;
     can->handle.Init.AutoRetransmission   = ENABLE;
     can->handle.Init.ReceiveFifoLocked    = DISABLE;
-    can->handle.Init.TransmitFifoPriority = ENABLE;
+    can->handle.Init.TransmitFifoPriority = DISABLE;
 
     if (!bx_can_set_timing(can, bitrate))
         return false;
