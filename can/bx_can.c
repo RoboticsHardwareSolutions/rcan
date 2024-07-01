@@ -65,30 +65,35 @@ bool bx_can_is_ok(rcan* can)
         can->errors = CE_OVERRUN;
     }
     if ((HAL_CAN_GetState(&can->handle) == HAL_CAN_STATE_ERROR))
-        can->errors = CE_OTHER;
+    {
+        can->errors = CE_STATE_ERROR;
+    }
     if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_ERRI))
-        can->errors = CE_OTHER1;
-    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_ALST0))
-        can->errors = CE_OTHER2;
-    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_ALST1))
-        can->errors = CE_OTHER3;
-    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_ALST2))
-        can->errors = CE_OTHER4;
-
-    if ((HAL_CAN_GetError(&can->handle) != HAL_CAN_ERROR_NONE))
-        can->errors = CE_OTHER5;
+    {
+        can->errors = CE_ERRI;
+    }
 
     if(rec > 0)
-        can->errors = CE_OTHER6;
+    {
+        can->errors = CE_SOME_REC;
+    }
     else if(lec > 0)
-        can->errors = CE_OTHER7;
+    {
+        can->errors = CE_SOME_LEC;
+    }
     else if(tec > 0)
-        can->errors = CE_OTHER8;
+    {
+        can->errors = CE_SOME_TEC;
+    }
 
     if (can->errors == CE_OK)
+    {
         return true;
+    }
     else
+    {
         return false;
+    }
 }
 
 bool bx_can_stop(rcan* can)

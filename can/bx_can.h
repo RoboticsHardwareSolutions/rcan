@@ -45,15 +45,11 @@ typedef enum
      */
     CE_XMTFULL, /* Transmit buffer in CAN controller is full */
     CE_OVERRUN,  /* CAN controller was read too late */
-    CE_OTHER,
-    CE_OTHER1,
-    CE_OTHER2,
-    CE_OTHER3,
-    CE_OTHER4,
-    CE_OTHER5,
-    CE_OTHER6,
-    CE_OTHER7,
-    CE_OTHER8,
+    CE_STATE_ERROR,
+    CE_ERRI,
+    CE_SOME_REC,
+    CE_SOME_LEC,
+    CE_SOME_TEC,
 } can_errors_t;
 
 struct can_iface
