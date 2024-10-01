@@ -1,6 +1,6 @@
 [submodule "test/runit"]
 	path = test/runit
-	url = https://gitlab.com/RoboticsHardwareSolutions/rlibs/runit.git
+	url = https://github.com/RoboticsHardwareSolutions/runit.git
 [submodule "rnode"]
 	path = rnode
-	url = https://gitlab.com/RoboticsHardwareSolutions/rlibs/rnode.git
+	url = https://github.com/RoboticsHardwareSolutions/rnode.git
