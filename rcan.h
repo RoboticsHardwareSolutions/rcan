@@ -72,6 +72,10 @@ bool rcan_receive(rcan* can, rcan_frame* frame);
 
 void rcan_view_frame(rcan_frame* frame);
 
+#if !(defined(__unix__) || defined(__APPLE__) || defined(__CYGWIN__))
+bool rcan_async_receive_start(rcan* can);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

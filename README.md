@@ -50,3 +50,54 @@ int main(int argc, char *argv[]) {
 }
 ```
 
+## example for BareMetal with Rx Interrupt:
+
+```c
+rcan can;
+
+void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
+{
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    if (canHandle->Instance == CAN1)
+    {
+        /* CAN1 clock enable */
+        __HAL_RCC_CAN1_CLK_ENABLE();
+
+        __HAL_RCC_GPIOA_CLK_ENABLE();
+        /**CAN1 GPIO Configuration
+        PA11     ------> CAN1_RX
+        PA12     ------> CAN1_TX
+        */
+        GPIO_InitStruct.Pin       = GPIO_PIN_11 | GPIO_PIN_12;
+        GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
+        GPIO_InitStruct.Pull      = GPIO_NOPULL;
+        GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
+        GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
+        HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+        // If you want to use Rx Interrupts
+        HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 5, 0);
+        HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+    }
+}
+
+// Reference Interrupt Handler
+void CAN1_RX0_IRQHandler(void)
+{
+    rcan_frame frame = {0};
+
+    if (!rcan_is_ok(&can))
+    {
+        return;
+    }
+
+    rcan_receive(&can, &frame);
+    // ... your code
+}
+
+/*
+ * Use rcan_async_receive_start(&can) in your main code when you will be ready to communication
+ */
+
+```
+

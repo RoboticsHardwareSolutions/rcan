@@ -51,7 +51,7 @@ bool bx_can_is_ok(rcan* can)
 
 
     can->errors = CE_OK;
-    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_EPV))
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_EPV) || __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_EWG) || __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_BOF))
     {
         can->errors = CE_EPV;
     }

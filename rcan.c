@@ -152,3 +152,11 @@ void rcan_view_frame(rcan_frame* frame)
     }
     printf("\n");
 }
+
+#if !(defined(__unix__) || defined(__APPLE__) || defined(__CYGWIN__))
+bool rcan_async_receive_start(rcan* can)
+{
+    HAL_CAN_ActivateNotification(&can->handle, CAN_IT_RX_FIFO0_MSG_PENDING);
+    return 0;
+}
+#endif
