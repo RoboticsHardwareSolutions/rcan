@@ -44,7 +44,7 @@ typedef enum
      * This Flag is cleared only by hardware.
      */
     CE_XMTFULL, /* Transmit buffer in CAN controller is full */
-    CE_OVERRUN,  /* CAN controller was read too late */
+    CE_OVERRUN, /* CAN controller was read too late */
     CE_STATE_ERROR,
     CE_ERRI,
     CE_SOME_REC,
@@ -58,7 +58,7 @@ struct can_iface
     rcan_timing       timing;
     rcan_filter       filter;
     bool              use_filter;
-    can_errors_t      errors;
+    uint16_t          errors;
 };
 
 typedef struct can_iface rcan;

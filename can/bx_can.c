@@ -53,37 +53,37 @@ bool bx_can_is_ok(rcan* can)
     can->errors = CE_OK;
     if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_EPV) || __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_EWG) || __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_BOF))
     {
-        can->errors = CE_EPV;
+        can->errors |= (1<<CE_EPV);
     }
-    else if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR0) || __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR1) ||
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR0) || __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR1) ||
              __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR2))
     {
-        can->errors = CE_XMTFULL;
+        can->errors |= (1<<CE_XMTFULL);
     }
-    else if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV0) || __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV1))
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV0) || __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV1))
     {
-        can->errors = CE_OVERRUN;
+        can->errors |= (1<<CE_OVERRUN);
     }
     if ((HAL_CAN_GetState(&can->handle) == HAL_CAN_STATE_ERROR))
     {
-        can->errors = CE_STATE_ERROR;
+        can->errors |= (1<<CE_STATE_ERROR);
     }
     if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_ERRI))
     {
-        can->errors = CE_ERRI;
+        can->errors |= (1<<CE_ERRI);
     }
 
     if(rec > 0)
     {
-        can->errors = CE_SOME_REC;
+        can->errors |= (1<<CE_SOME_REC);
     }
-    else if(lec > 0)
+    if(lec > 0)
     {
-        can->errors = CE_SOME_LEC;
+        can->errors |= (1<<CE_SOME_LEC);
     }
-    else if(tec > 0)
+    if(tec > 0)
     {
-        can->errors = CE_SOME_TEC;
+        can->errors |= (1<<CE_SOME_TEC);
     }
 
     if (can->errors == CE_OK)
