@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.24)
 project(rcan
         VERSION 0.2.0
         LANGUAGES C
