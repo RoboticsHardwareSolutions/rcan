@@ -1,12 +1,18 @@
 #pragma once
 
-#if defined(STM32G474xx)
+#if defined(STM32G474xx) || defined(STM32G0B1xx)
 
 #    include "stdbool.h"
 #    include "rcan_def.h"
 #    include "rcan_timing.h"
 #    include "rcan.h"
 #    include "rcan_filter.h"
+
+#    if defined(STM32G0B1xx)
+
+#        include "stm32g0xx_hal.h"
+
+#    endif
 
 #    if defined(STM32G474xx)
 
@@ -36,4 +42,4 @@ bool bx_canfd_send(rcan* can, rcan_frame* frame);
 
 bool bx_canfd_receive(rcan* can, rcan_frame* frame);
 
-#endif  // defined(STM32G474xx)
+#endif  // defined(STM32G474xx) || defined(STM32G0B1xx)
