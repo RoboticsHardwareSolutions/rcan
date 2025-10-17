@@ -19,6 +19,24 @@
 #        include "stm32g4xx_hal.h"
 
 #    endif
+typedef enum
+{
+    CE_OK,
+    CE_EPV,
+    /*
+     * Error Passive Flag
+     * Set when the Error Passive limit has been reached
+     * (Receive Error Counter or Transmit Error Counter greater than 127).
+     * This Flag is cleared only by hardware.
+     */
+    CE_XMTFULL, /* Transmit buffer in CAN controller is full */
+    CE_OVERRUN, /* CAN controller was read too late */
+    CE_STATE_ERROR,
+    CE_ERRI,
+    CE_SOME_REC,
+    CE_SOME_LEC,
+    CE_SOME_TEC,
+} can_errors_t;
 
 struct can_iface
 {
