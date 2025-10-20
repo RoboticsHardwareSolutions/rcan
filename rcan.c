@@ -2,9 +2,16 @@
 #include "stdio.h"
 #include "stdint.h"
 
-#include "u_can.h"
-#include "bx_can.h"
-#include "bx_canfd.h"
+#if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
+#    include "u_can.h"
+#endif
+#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
+    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
+#    include "bx_can.h"
+#endif
+#if defined(STM32G474xx) || defined(STM32G0B1xx)
+#    include "bx_canfd.h"
+#endif
 
 bool rcan_filter_preconfiguration(rcan* can, uint32_t* accepted_ids, uint32_t size)
 {

@@ -44,8 +44,8 @@ struct can_iface
     rcan_timing         timing;
     rcan_filter         filter;
     bool                use_filter;
+    uint16_t            errors;
 };
-
 typedef struct can_iface rcan;
 
 bool bx_canfd_filter_preconfiguration(rcan* can, uint32_t* accepted_ids, uint32_t size);
