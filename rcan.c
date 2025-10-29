@@ -2,9 +2,16 @@
 #include "stdio.h"
 #include "stdint.h"
 
-#include "u_can.h"
-#include "bx_can.h"
-#include "bx_canfd.h"
+#if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
+#    include "u_can.h"
+#endif
+#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
+    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
+#    include "bx_can.h"
+#endif
+#if defined(STM32G474xx) || defined(STM32G0B1xx)
+#    include "bx_canfd.h"
+#endif
 
 bool rcan_filter_preconfiguration(rcan* can, uint32_t* accepted_ids, uint32_t size)
 {
@@ -22,9 +29,9 @@ bool rcan_filter_preconfiguration(rcan* can, uint32_t* accepted_ids, uint32_t si
     return bx_can_filter_preconfiguration(can, accepted_ids, size);
 #endif
 
-#if defined(STM32G474xx)
+#if defined(STM32G474xx) || defined(STM32G0B1xx)
     return bx_canfd_filter_preconfiguration(can, accepted_ids, size);
-#endif
+#endif  // defined(STM32G474xx) || defined(STM32G0B1xx)
 }
 
 bool rcan_start(rcan* can, uint32_t channel, uint32_t bitrate)
@@ -43,9 +50,9 @@ bool rcan_start(rcan* can, uint32_t channel, uint32_t bitrate)
     return bx_can_start(can, channel, bitrate);
 #endif
 
-#if defined(STM32G474xx)
+#if defined(STM32G474xx) || defined(STM32G0B1xx)
     return bx_canfd_start(can, channel, bitrate);
-#endif
+#endif  // defined(STM32G474xx) || defined(STM32G0B1xx)
 }
 
 bool rcan_is_ok(rcan* can)
@@ -64,7 +71,7 @@ bool rcan_is_ok(rcan* can)
     return bx_can_is_ok(can);
 #endif
 
-#if defined(STM32G474xx)
+#if defined(STM32G474xx) || defined(STM32G0B1xx)
     return bx_canfd_is_ok(can);
 #endif
 }
@@ -85,9 +92,9 @@ bool rcan_stop(rcan* can)
     return bx_can_stop(can);
 #endif
 
-#if defined(STM32G474xx)
+#if defined(STM32G474xx) || defined(STM32G0B1xx)
     return bx_canfd_stop(can);
-#endif
+#endif  // defined(STM32G474xx) || defined(STM32G0B1xx)
 }
 
 bool rcan_send(rcan* can, rcan_frame* frame)
@@ -106,9 +113,9 @@ bool rcan_send(rcan* can, rcan_frame* frame)
     return bx_can_send(can, frame);
 #endif
 
-#if defined(STM32G474xx)
+#if defined(STM32G474xx) || defined(STM32G0B1xx)
     return bx_canfd_send(can, frame);
-#endif
+#endif  // defined(STM32G474xx) || defined(STM32G0B1xx)
 }
 
 bool rcan_receive(rcan* can, rcan_frame* frame)
@@ -127,9 +134,9 @@ bool rcan_receive(rcan* can, rcan_frame* frame)
     return bx_can_receive(can, frame);
 #endif
 
-#if defined(STM32G474xx)
+#if defined(STM32G474xx) || defined(STM32G0B1xx)
     return bx_canfd_receive(can, frame);
-#endif
+#endif  // defined(STM32G474xx) || defined(STM32G0B1xx)
 }
 
 void rcan_view_frame(rcan_frame* frame)
@@ -153,7 +160,8 @@ void rcan_view_frame(rcan_frame* frame)
     printf("\n");
 }
 
-#if !(defined(__unix__) || defined(__APPLE__) || defined(__CYGWIN__))
+#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
+    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
 bool rcan_async_receive_start(rcan* can)
 {
     HAL_CAN_ActivateNotification(&can->handle, CAN_IT_RX_FIFO0_MSG_PENDING);

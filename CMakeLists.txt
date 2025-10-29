@@ -31,7 +31,7 @@ set(RCAN_SOURCES
         can/bx_canfd.c
         can/u_can.c
         can/bx_can.c
-        can/bx_canfd.h)
+    )
 
 set(RCAN_FILES
         ${RCAN_HEADER}

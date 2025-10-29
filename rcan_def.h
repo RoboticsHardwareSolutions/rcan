@@ -99,10 +99,10 @@ typedef struct
 #endif  // defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB)
 // || defined(STM32F091xC) || defined(STM32F103xB)
 
-#if defined(STM32G474xx)
+#if defined(STM32G474xx) || defined(STM32G0B1xx)
 
 #    include "bx_canfd.h"
 
-#endif
+#endif  // defined(STM32G474xx) || defined(STM32F0B1xx)
 
 #endif  // __RCAN_DEF_H
