@@ -230,12 +230,12 @@ static bool bx_canfd_make_can_tx_header(rcan_frame* frame, FDCAN_TxHeaderTypeDef
     if (!frame->rtr)
     {
         tx_header->TxFrameType = FDCAN_DATA_FRAME;
-        tx_header->DataLength  = frame->len << 16U;
+        tx_header->DataLength  = frame->len;
     }
     else
     {
         tx_header->TxFrameType = FDCAN_REMOTE_FRAME;
-        tx_header->DataLength  = 0 << 16U;
+        tx_header->DataLength  = 0;
     }
 
     tx_header->ErrorStateIndicator = FDCAN_ESI_PASSIVE;
