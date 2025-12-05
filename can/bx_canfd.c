@@ -144,7 +144,7 @@ bool bx_canfd_receive(rcan* can, rcan_frame* frame)
     if (success)
     {
         frame->id  = rx_header.Identifier;
-        frame->len = (uint32_t) rx_header.DataLength >> 16U;
+        frame->len = rx_header.DataLength;
         if (rx_header.IdType == FDCAN_EXTENDED_ID)
             frame->type = ext_id;
         else if (rx_header.IdType == FDCAN_STANDARD_ID)
