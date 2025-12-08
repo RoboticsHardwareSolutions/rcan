@@ -10,6 +10,8 @@ static bool bx_canfd_set_data_timing(rcan* can, uint32_t data_bitrate);
 
 static bool bx_canfd_make_can_tx_header(rcan_frame* frame, FDCAN_TxHeaderTypeDef* tx_header);
 
+static bool bx_canfd_enable_notification(rcan* can);
+
 bool bx_canfd_filter_preconfiguration(rcan* can, uint32_t* accepted_ids, uint32_t size)
 {
     can->use_filter = true;
@@ -46,6 +48,14 @@ bool bx_canfd_start(rcan* can, uint32_t channel, uint32_t bitrate)
     {
         if (!bx_canfd_set_filter(can))
             return false;
+    }
+
+    if (can->async)
+    {
+        if (!bx_canfd_enable_notification(can))
+        {
+            return false;
+        }
     }
 
     return HAL_FDCAN_Start(&can->handle) == HAL_OK;
@@ -243,6 +253,12 @@ static bool bx_canfd_make_can_tx_header(rcan_frame* frame, FDCAN_TxHeaderTypeDef
     tx_header->FDFormat            = FDCAN_CLASSIC_CAN;
     tx_header->Identifier          = frame->id;
     return true;
+}
+
+static bool bx_canfd_enable_notification(rcan* can)
+{
+    // Activate notifications for Rx FIFO 0
+    return HAL_FDCAN_ActivateNotification(&can->handle, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) == HAL_OK;
 }
 
 #endif  // defined(STM32G474xx) || defined(STM32G0B1xx)

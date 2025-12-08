@@ -44,6 +44,7 @@ struct can_iface
     rcan_timing         timing;
     rcan_filter         filter;
     bool                use_filter;
+    bool                async;
     uint16_t            errors;
 };
 typedef struct can_iface rcan;
