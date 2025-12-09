@@ -10,7 +10,9 @@ static bool bx_canfd_set_data_timing(rcan* can, uint32_t data_bitrate);
 
 static bool bx_canfd_make_can_tx_header(rcan_frame* frame, FDCAN_TxHeaderTypeDef* tx_header);
 
-static bool bx_canfd_enable_notification(rcan* can);
+static bool bx_canfd_enable_rx_notification(rcan* can);
+static bool bx_canfd_enable_tx_notification(rcan* can);
+static bool bx_canfd_enable_err_notification(rcan* can);
 
 bool bx_canfd_filter_preconfiguration(rcan* can, uint32_t* accepted_ids, uint32_t size)
 {
@@ -50,9 +52,25 @@ bool bx_canfd_start(rcan* can, uint32_t channel, uint32_t bitrate)
             return false;
     }
 
-    if (can->async)
+    if (can->rx_notify_en)
     {
-        if (!bx_canfd_enable_notification(can))
+        if (!bx_canfd_enable_rx_notification(can))
+        {
+            return false;
+        }
+    }
+
+    if (can->tx_notify_en)
+    {
+        if (!bx_canfd_enable_tx_notification(can))
+        {
+            return false;
+        }
+    }
+
+    if (can->err_notify_en)
+    {
+        if (!bx_canfd_enable_err_notification(can))
         {
             return false;
         }
@@ -255,10 +273,22 @@ static bool bx_canfd_make_can_tx_header(rcan_frame* frame, FDCAN_TxHeaderTypeDef
     return true;
 }
 
-static bool bx_canfd_enable_notification(rcan* can)
+static bool bx_canfd_enable_rx_notification(rcan* can)
 {
     // Activate notifications for Rx FIFO 0
     return HAL_FDCAN_ActivateNotification(&can->handle, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) == HAL_OK;
+}
+
+static bool bx_canfd_enable_tx_notification(rcan* can)
+{
+    // Activate notifications for Tx operation is complete
+    return HAL_FDCAN_ActivateNotification(&can->handle, FDCAN_IT_TX_COMPLETE, 0) == HAL_OK;
+}
+
+static bool bx_canfd_enable_err_notification(rcan* can)
+{
+    // Activate notifications for FDCAN error list
+    return HAL_FDCAN_ActivateNotification(&can->handle, FDCAN_IT_LIST_PROTOCOL_ERROR, 0) == HAL_OK;
 }
 
 #endif  // defined(STM32G474xx) || defined(STM32G0B1xx)
