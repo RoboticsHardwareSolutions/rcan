@@ -10,6 +10,10 @@ static bool bx_canfd_set_data_timing(rcan* can, uint32_t data_bitrate);
 
 static bool bx_canfd_make_can_tx_header(rcan_frame* frame, FDCAN_TxHeaderTypeDef* tx_header);
 
+static bool bx_canfd_enable_rx_notification(rcan* can);
+static bool bx_canfd_enable_tx_notification(rcan* can);
+static bool bx_canfd_enable_err_notification(rcan* can);
+
 bool bx_canfd_filter_preconfiguration(rcan* can, uint32_t* accepted_ids, uint32_t size)
 {
     can->use_filter = true;
@@ -46,6 +50,30 @@ bool bx_canfd_start(rcan* can, uint32_t channel, uint32_t bitrate)
     {
         if (!bx_canfd_set_filter(can))
             return false;
+    }
+
+    if (can->rx_notify_en)
+    {
+        if (!bx_canfd_enable_rx_notification(can))
+        {
+            return false;
+        }
+    }
+
+    if (can->tx_notify_en)
+    {
+        if (!bx_canfd_enable_tx_notification(can))
+        {
+            return false;
+        }
+    }
+
+    if (can->err_notify_en)
+    {
+        if (!bx_canfd_enable_err_notification(can))
+        {
+            return false;
+        }
     }
 
     return HAL_FDCAN_Start(&can->handle) == HAL_OK;
@@ -144,7 +172,7 @@ bool bx_canfd_receive(rcan* can, rcan_frame* frame)
     if (success)
     {
         frame->id  = rx_header.Identifier;
-        frame->len = (uint32_t) rx_header.DataLength >> 16U;
+        frame->len = rx_header.DataLength;
         if (rx_header.IdType == FDCAN_EXTENDED_ID)
             frame->type = ext_id;
         else if (rx_header.IdType == FDCAN_STANDARD_ID)
@@ -230,12 +258,12 @@ static bool bx_canfd_make_can_tx_header(rcan_frame* frame, FDCAN_TxHeaderTypeDef
     if (!frame->rtr)
     {
         tx_header->TxFrameType = FDCAN_DATA_FRAME;
-        tx_header->DataLength  = frame->len << 16U;
+        tx_header->DataLength  = frame->len;
     }
     else
     {
         tx_header->TxFrameType = FDCAN_REMOTE_FRAME;
-        tx_header->DataLength  = 0 << 16U;
+        tx_header->DataLength  = 0;
     }
 
     tx_header->ErrorStateIndicator = FDCAN_ESI_PASSIVE;
@@ -243,6 +271,24 @@ static bool bx_canfd_make_can_tx_header(rcan_frame* frame, FDCAN_TxHeaderTypeDef
     tx_header->FDFormat            = FDCAN_CLASSIC_CAN;
     tx_header->Identifier          = frame->id;
     return true;
+}
+
+static bool bx_canfd_enable_rx_notification(rcan* can)
+{
+    // Activate notifications for Rx FIFO 0
+    return HAL_FDCAN_ActivateNotification(&can->handle, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) == HAL_OK;
+}
+
+static bool bx_canfd_enable_tx_notification(rcan* can)
+{
+    // Activate notifications for Tx operation is complete
+    return HAL_FDCAN_ActivateNotification(&can->handle, FDCAN_IT_TX_COMPLETE, 0) == HAL_OK;
+}
+
+static bool bx_canfd_enable_err_notification(rcan* can)
+{
+    // Activate notifications for FDCAN error list
+    return HAL_FDCAN_ActivateNotification(&can->handle, FDCAN_IT_LIST_PROTOCOL_ERROR, 0) == HAL_OK;
 }
 
 #endif  // defined(STM32G474xx) || defined(STM32G0B1xx)
