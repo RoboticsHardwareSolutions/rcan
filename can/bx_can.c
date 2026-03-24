@@ -43,47 +43,45 @@ bool bx_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
 
 bool bx_can_is_ok(rcan* can)
 {
-
     uint8_t tec = (can->handle.Instance->ESR >> 16) & 0xFF;
     uint8_t rec = (can->handle.Instance->ESR >> 24) & 0xFF;
     uint8_t lec = (can->handle.Instance->ESR >> 4) & 0x03;
 
-
-
     can->errors = CE_OK;
-    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_EPV) || __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_EWG) || __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_BOF))
+    if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_EPV) || __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_EWG) ||
+        __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_BOF))
     {
-        can->errors |= (1<<CE_EPV);
+        can->errors |= (1 << CE_EPV);
     }
     if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR0) || __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR1) ||
-             __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR2))
+        __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_TERR2))
     {
-        can->errors |= (1<<CE_XMTFULL);
+        can->errors |= (1 << CE_XMTFULL);
     }
     if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV0) || __HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_FOV1))
     {
-        can->errors |= (1<<CE_OVERRUN);
+        can->errors |= (1 << CE_OVERRUN);
     }
     if ((HAL_CAN_GetState(&can->handle) == HAL_CAN_STATE_ERROR))
     {
-        can->errors |= (1<<CE_STATE_ERROR);
+        can->errors |= (1 << CE_STATE_ERROR);
     }
     if (__HAL_CAN_GET_FLAG(&can->handle, CAN_FLAG_ERRI))
     {
-        can->errors |= (1<<CE_ERRI);
+        can->errors |= (1 << CE_ERRI);
     }
 
-    if(rec > 0)
+    if (rec > 0)
     {
-        can->errors |= (1<<CE_SOME_REC);
+        can->errors |= (1 << CE_SOME_REC);
     }
-    if(lec > 0)
+    if (lec > 0)
     {
-        can->errors |= (1<<CE_SOME_LEC);
+        can->errors |= (1 << CE_SOME_LEC);
     }
-    if(tec > 0)
+    if (tec > 0)
     {
-        can->errors |= (1<<CE_SOME_TEC);
+        can->errors |= (1 << CE_SOME_TEC);
     }
 
     if (can->errors == CE_OK)
@@ -116,8 +114,7 @@ bool bx_can_stop(rcan* can)
 
 bool bx_can_send(rcan* can, rcan_frame* frame)
 {
-    if (can == NULL || frame == NULL || frame->type == nonframe || frame->payload == NULL ||
-        frame->len > RCAN_MAX_FRAME_PAYLOAD_SIZE)
+    if (can == NULL || frame == NULL || frame->type == nonframe || frame->len > RCAN_MAX_FRAME_PAYLOAD_SIZE)
         return false;
 
     CAN_TxHeaderTypeDef tx_header = {0};
@@ -142,7 +139,7 @@ bool bx_can_send(rcan* can, rcan_frame* frame)
 
 bool bx_can_receive(rcan* can, rcan_frame* frame)
 {
-    if (can == NULL || frame == NULL || frame->payload == NULL)
+    if (can == NULL || frame == NULL)
         return false;
 
     uint32_t            fifo      = 0;
