@@ -1,6 +1,7 @@
 #include "rcan.h"
 #include "stdio.h"
 #include "stdint.h"
+#include "inttypes.h"
 
 #if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
 #    include "u_can.h"
@@ -148,11 +149,11 @@ void rcan_view_frame(rcan_frame* frame)
 
     if (frame->rtr)
     {
-        printf("ID : %8x RTR ", frame->id);
+        printf("ID : %8" PRIx32 " RTR ", frame->id);
         return;
     }
 
-    printf("ID : %8x | %s | LEN : %2d | DATA : ", frame->id, frame->type == std_id ? "STD" : "EXT", frame->len);
+    printf("ID : %8" PRIx32 " | %s | LEN : %2d | DATA : ", frame->id, frame->type == std_id ? "STD" : "EXT", frame->len);
     for (uint8_t i = 0; i < frame->len; i++)
     {
         printf("%02x ", frame->payload[i]);
