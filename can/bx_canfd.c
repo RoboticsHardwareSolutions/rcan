@@ -137,8 +137,7 @@ bool bx_canfd_stop(rcan* can)
 
 bool bx_canfd_send(rcan* can, rcan_frame* frame)
 {
-    if (can == NULL || frame == NULL || frame->type == nonframe || frame->payload == NULL ||
-        frame->len > RCAN_MAX_FRAME_PAYLOAD_SIZE)
+    if (can == NULL || frame == NULL || frame->type == nonframe || frame->len > RCAN_MAX_FRAME_PAYLOAD_SIZE)
         return false;
 
     if (HAL_FDCAN_GetTxFifoFreeLevel(&can->handle) == 0)
@@ -154,7 +153,7 @@ bool bx_canfd_send(rcan* can, rcan_frame* frame)
 
 bool bx_canfd_receive(rcan* can, rcan_frame* frame)
 {
-    if (can == NULL || frame == NULL || frame->payload == NULL)
+    if (can == NULL || frame == NULL)
         return false;
 
     uint32_t fifo = 0;
