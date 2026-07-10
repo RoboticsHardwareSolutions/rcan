@@ -1,8 +1,8 @@
-/*****************************************************************************
- * Copyright (C) 2001-2019  PEAK System-Technik GmbH
+/* SPDX-License-Identifier: LGPL-2.1-only */
+/*
+ * constants and definitions to access the drivers
  *
- * linux@peak-system.com
- * www.peak-system.com
+ * Copyright (C) 2001-2025  PEAK System-Technik GmbH <www.peak-system.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,35 +16,25 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * Maintainer(s): Stephane Grosjean <s.grosjean@peak-system.com>
- * Contributor(s): Klaus Hitschler <klaus.hitschler@gmx.de>
- *****************************************************************************/
-
-/*****************************************************************************
- * pcan.h
- *
- * constants and definitions to access the drivers
- *****************************************************************************/
-
+ * Contact:     <linux.peak@hms-networks.com>
+ * Maintainer:  Stephane Grosjean <stephane.grosjean@hms-networks.com>
+ * Contributor: Klaus Hitschler <klaus.hitschler@gmx.de>
+ */
 #ifndef __PCAN_H__
 #define __PCAN_H__
 
 #include <linux/types.h>
 #include <linux/ioctl.h>
 
-#if defined(DWORD) || defined(WORD) || defined(BYTE)
-#error "double define for DWORD, WORD, BYTE found"
-#endif
-
-#ifdef __KERNEL__
-#define DWORD  u32
-#define WORD   u16
-#define BYTE   u8
-#else
+#ifndef DWORD
 #define DWORD  __u32
+#endif
+#ifndef WORD
 #define WORD   __u16
+#endif
+#ifndef BYTE
 #define BYTE   __u8
 #endif
 
@@ -65,6 +55,7 @@
 #define HW_USB_FD         18	/* same as Device ID (why not?) */
 #define HW_PCIE_FD        19	/* this kind of PCIe runs uCAN FPGA */
 #define HW_USB_X6         20	/* same as Device ID (why not?) */
+#define HW_USB_XL         48	/* same as Device ID (why not?) */
 
 /* compatibility */
 #define HW_PCI_FD         HW_PCIE_FD
@@ -101,6 +92,7 @@
 #define MSGTYPE_RTR           0x01     // marks a remote frame
 #define MSGTYPE_EXTENDED      0x02     // declares a extended frame
 #define MSGTYPE_SELFRECEIVE   0x04     // self-received message
+#define MSGTYPE_SINGLESHOT    0x08     // single-shot message
 #define MSGTYPE_STATUS        0x80     // used to mark a status TPCANMsg
 
 /*
@@ -170,15 +162,35 @@ typedef struct pcan_msg_filter {
 /*
  * currently available sub-functions
  */
-#define SF_GET_SERIALNUMBER 1 // to get the serial number (currently only pcan-usb)
-#define SF_GET_HCDEVICENO   3 // request hardcoded device number (currently only pcan-usb)
-#define SF_SET_HCDEVICENO   4 // to set hardcoded device number (currently only pcan-usb)
+#define PCAN_SF_SET(f)		(int )((f) << 1)
+#define PCAN_SF_GET(f)		(PCAN_SF_SET(f) - 1)
+
+/* 32-bit func compatibles */
+#define PCAN_SF_SERIALNUMBER	1
+#define PCAN_SF_DEVICENO	2
+#define PCAN_SF_FWVERSION	3
+#define PCAN_SF_MAX32		63
+
+/* 64 bytes func */
+#define PCAN_SF_ADAPTERNAME	65
+#define PCAN_SF_PARTNUM		66
+#define PCAN_SF_MAX		127
+
+#define SF_GET_SERIALNUMBER	PCAN_SF_GET(PCAN_SF_SERIALNUMBER)
+#define SF_GET_HCDEVICENO	PCAN_SF_GET(PCAN_SF_DEVICENO)
+#define SF_SET_HCDEVICENO	PCAN_SF_SET(PCAN_SF_DEVICENO)
+#define SF_GET_FWVERSION	PCAN_SF_GET(PCAN_SF_FWVERSION)
+#define SF_GET_ADAPTERNAME	PCAN_SF_GET(PCAN_SF_ADAPTERNAME)
+#define SF_GET_PARTNUM		PCAN_SF_GET(PCAN_SF_PARTNUM)
+
+#define PCAN_SF_DATA_MAXLEN	64
 
 typedef struct pcan_extra_params {
-	int   nSubFunction;    // a sub-function number SF_... to determine the union element used
+	int   nSubFunction;
 	union {
-		DWORD dwSerialNumber; // to get the pcan-usb serial number
-		BYTE  ucHCDeviceNo;   // only for USB-devices to get or set a hard assigned number
+		DWORD	dwSerialNumber;
+		BYTE	ucHCDeviceNo;
+		BYTE	ucDevData[PCAN_SF_DATA_MAXLEN];
 	} func;
 } TPEXTRAPARAMS;
 

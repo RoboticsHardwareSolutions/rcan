@@ -2,3 +2,9 @@ test/.idea
 test/cmake-build-*
 /cmake-build-*
 /.idea
+
+# libpcanbasic build output (built from thirdparty/PCAN-Basic-linux/pcanbasic-src)
+/thirdparty/PCAN-Basic-linux/pcanbasic-src/out/
+/thirdparty/PCAN-Basic-linux/pcanbasic-src/out32/
+/thirdparty/PCAN-Basic-linux/pcanbasic-src/lib/
+/thirdparty/PCAN-Basic-linux/pcanbasic-src/lib32/
