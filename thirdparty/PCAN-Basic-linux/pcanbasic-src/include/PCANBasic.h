@@ -2,7 +2,7 @@
 /*
  * PCANBasic.h - PCAN-Basic API
  *
- * Copyright (C) 2001-2022  PEAK System-Technik GmbH <www.peak-system.com>
+ * Copyright (C) 2001-2025  PEAK System-Technik GmbH <www.peak-system.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,10 +18,10 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * Contact:    <linux@peak-system.com>
- * Maintainer: Fabrice Vergnaud <f.vergnaud@peak-system.com>
- *			   Stephane Grosjean <s.grosjean@peak-system.com>
- * Author:     Keneth Wagner
+ * Contact:      <linux.peak@hms-networks.com>
+ * Maintainer:   Fabrice Vergnaud <fabrice.vergnaud@hms-networks.com>
+ *               Stephane Grosjean <stephane.grosjean@hms-networks.com>
+ * Author:       Keneth Wagner
  */
 //  PCANBasic.h
 //
@@ -33,23 +33,32 @@
 //
 //  ------------------------------------------------------------------
 //  Author : Keneth Wagner
-//  Last change: 2021-10-01
+//  Last change: 2025-10-24
 //
 //  Language: ANSI-C
 //  ------------------------------------------------------------------
 //
-//  Copyright (C) 1999-2021  PEAK-System Technik GmbH, Darmstadt
-//  more Info at http://www.peak-system.com 
+//  Copyright (C) 1999-2025  PEAK-System Technik GmbH, Darmstadt
+//  more Info at http://www.peak-system.com
 //
 #ifndef __PCANBASICH__
 #define __PCANBASICH__
 
 #if defined(__linux__)
 /* include pcan.h but renaming TPCANMsg structure */
-#ifndef TPCANMsg
-#define TPCANMsg _TPCANMsg
-#include <pcan.h> /* handle DWORD and other definitions from Windows */
-#undef TPCANMsg
+#ifndef __PCAN_H__
+ #define TPCANMsg _TPCANMsg
+ /* workaround to prevent pcan.h to throw an error when <DWORD>, <WORD>, <BYTE> are already defined */
+ #if defined(DWORD) || defined(WORD) || defined(BYTE)
+  #if (DWORD != __u32) && (WORD != __u16) && (BYTE != __u8)
+   #warning(message, "Warning <pcan.h> requires <DWORD>, <WORD>, <BYTE> to be redefined to __u32, __u16, __u8.")
+  #endif
+  #undef DWORD
+  #undef WORD
+  #undef BYTE
+ #endif
+ #include <pcan.h> /* handle DWORD and other definitions from Windows */
+ #undef TPCANMsg
 #endif
 
 #ifndef __stdcall
@@ -82,17 +91,6 @@
 // Currently defined and supported PCAN channels
 //
 #define PCAN_NONEBUS                  0x00U  // Undefined/default value for a PCAN bus
-
-#define PCAN_ISABUS1                  0x21U  // PCAN-ISA interface, channel 1
-#define PCAN_ISABUS2                  0x22U  // PCAN-ISA interface, channel 2
-#define PCAN_ISABUS3                  0x23U  // PCAN-ISA interface, channel 3
-#define PCAN_ISABUS4                  0x24U  // PCAN-ISA interface, channel 4
-#define PCAN_ISABUS5                  0x25U  // PCAN-ISA interface, channel 5
-#define PCAN_ISABUS6                  0x26U  // PCAN-ISA interface, channel 6
-#define PCAN_ISABUS7                  0x27U  // PCAN-ISA interface, channel 7
-#define PCAN_ISABUS8                  0x28U  // PCAN-ISA interface, channel 8
-
-#define PCAN_DNGBUS1                  0x31U  // PCAN-Dongle/LPT interface, channel 1
 
 #define PCAN_PCIBUS1                  0x41U  // PCAN-PCI interface, channel 1
 #define PCAN_PCIBUS2                  0x42U  // PCAN-PCI interface, channel 2
@@ -128,9 +126,6 @@
 #define PCAN_USBBUS15                 0x50FU  // PCAN-USB interface, channel 15
 #define PCAN_USBBUS16                 0x510U  // PCAN-USB interface, channel 16
 
-#define PCAN_PCCBUS1                  0x61U  // PCAN-PC Card interface, channel 1
-#define PCAN_PCCBUS2                  0x62U  // PCAN-PC Card interface, channel 2
-
 #define PCAN_LANBUS1                  0x801U  // PCAN-LAN interface, channel 1
 #define PCAN_LANBUS2                  0x802U  // PCAN-LAN interface, channel 2
 #define PCAN_LANBUS3                  0x803U  // PCAN-LAN interface, channel 3
@@ -148,9 +143,9 @@
 #define PCAN_LANBUS15                 0x80FU  // PCAN-LAN interface, channel 15
 #define PCAN_LANBUS16                 0x810U  // PCAN-LAN interface, channel 16
 
-// Represent the PCAN error and status codes 
+// Represent the PCAN error and status codes
 //
-#define PCAN_ERROR_OK                 0x00000U  // No error 
+#define PCAN_ERROR_OK                 0x00000U  // No error
 #define PCAN_ERROR_XMTFULL            0x00001U  // Transmit buffer in CAN controller is full
 #define PCAN_ERROR_OVERRUN            0x00002U  // CAN controller was read too late
 #define PCAN_ERROR_BUSLIGHT           0x00004U  // Bus error: an error counter reached the 'light' limit
@@ -183,13 +178,8 @@
 // PCAN devices
 //
 #define PCAN_NONE                     0x00U  // Undefined, unknown or not selected PCAN device value
-#define PCAN_PEAKCAN                  0x01U  // PCAN Non-PnP devices. NOT USED WITHIN PCAN-Basic API
-#define PCAN_ISA                      0x02U  // PCAN-ISA, PCAN-PC/104, and PCAN-PC/104-Plus
-#define PCAN_DNG                      0x03U  // PCAN-Dongle
 #define PCAN_PCI                      0x04U  // PCAN-PCI, PCAN-cPCI, PCAN-miniPCI, and PCAN-PCI Express
 #define PCAN_USB                      0x05U  // PCAN-USB and PCAN-USB Pro
-#define PCAN_PCC                      0x06U  // PCAN-PC Card
-#define PCAN_VIRTUAL                  0x07U  // PCAN Virtual hardware. NOT USED WITHIN PCAN-Basic API
 #define PCAN_LAN                      0x08U  // PCAN Gateway devices
 
 // PCAN parameters
@@ -209,7 +199,7 @@
 #define PCAN_CHANNEL_CONDITION        0x0DU  // Availability status of a PCAN-Channel
 #define PCAN_HARDWARE_NAME            0x0EU  // PCAN hardware name parameter
 #define PCAN_RECEIVE_STATUS           0x0FU  // Message reception status of a PCAN-Channel
-#define PCAN_CONTROLLER_NUMBER        0x10U  // CAN-Controller number of a PCAN-Channel 
+#define PCAN_CONTROLLER_NUMBER        0x10U  // CAN-Controller number of a PCAN-Channel
 #define PCAN_TRACE_LOCATION           0x11U  // Directory path for PCAN trace files
 #define PCAN_TRACE_STATUS             0x12U  // CAN tracing activation status
 #define PCAN_TRACE_SIZE               0x13U  // Configuration of the maximum file size of a CAN trace
@@ -217,10 +207,10 @@
 #define PCAN_CHANNEL_IDENTIFYING      0x15U  // Physical identification of a USB based PCAN-Channel by blinking its associated LED
 #define PCAN_CHANNEL_FEATURES         0x16U  // Capabilities of a PCAN device (FEATURE_***)
 #define PCAN_BITRATE_ADAPTING         0x17U  // Using of an existing bit rate (PCAN-View connected to a channel)
-#define PCAN_BITRATE_INFO             0x18U  // Configured bit rate as Btr0Btr1 value
+#define PCAN_BITRATE_INFO_BTR         0x18U  // Configured bit rate as a Baud Rate Timing Register value
 #define PCAN_BITRATE_INFO_FD          0x19U  // Configured bit rate as TPCANBitrateFD string
 #define PCAN_BUSSPEED_NOMINAL         0x1AU  // Configured nominal CAN Bus speed as Bits per seconds
-#define PCAN_BUSSPEED_DATA            0x1BU  // Configured CAN data speed as Bits per seconds
+#define PCAN_BUSSPEED_FD              0x1BU  // Configured CAN data speed as Bits per seconds
 #define PCAN_IP_ADDRESS               0x1CU  // Remote address of a LAN channel as string in IPv4 format
 #define PCAN_LAN_SERVICE_STATUS       0x1DU  // Status of the Virtual PCAN-Gateway Service
 #define PCAN_ALLOW_STATUS_FRAMES      0x1EU  // Status messages reception status within a PCAN-Channel
@@ -239,10 +229,17 @@
 #define PCAN_ATTACHED_CHANNELS        0x2BU  // Get information about PCAN channels attached to a system
 #define PCAN_ALLOW_ECHO_FRAMES        0x2CU  // Echo messages reception status within a PCAN-Channel
 #define PCAN_DEVICE_PART_NUMBER       0x2DU  // Get the part number associated to a device
+#define PCAN_HARD_RESET_STATUS        0x2EU  // Activation status of hard reset processing via CAN_Reset calls
+#define PCAN_LAN_CHANNEL_DIRECTION    0x2FU  // Communication direction of a PCAN-Channel representing a PCAN-LAN interface
+#define PCAN_DEVICE_GUID              0x30U  // Get the global unique device identifier (GUID) associated to a device
+#define PCAN_BITRATE_INFO_CC          0x31U  // Configured bit rate as TPCANBitrateCC value
+#define PCAN_BITRATE_INFO_XL          0x32U  // Configured bit rate as TPCANBitrateXL string
+#define PCAN_BUSSPEED_XL              0x33U  // Configured CAN XL Bus speed as Bits per seconds
 
 // DEPRECATED parameters
 //
-#define PCAN_DEVICE_NUMBER            PCAN_DEVICE_ID  // Deprecated parameter. Use PCAN_DEVICE_ID instead 
+#define PCAN_BUSSPEED_DATA            PCAN_BUSSPEED_FD       // Deprecated parameter. Use PCAN_BUSSPEED_FD instead
+#define PCAN_BITRATE_INFO             PCAN_BITRATE_INFO_BTR  // Deprecated parameter. Use PCAN_BITRATE_INFO_BTR instead
 
 // PCAN parameter values
 //
@@ -257,9 +254,9 @@
 #define PCAN_CHANNEL_PCANVIEW         (PCAN_CHANNEL_AVAILABLE |  PCAN_CHANNEL_OCCUPIED) // The PCAN-Channel handle is already being used by a PCAN-View application, but is available to connect
 
 #define LOG_FUNCTION_DEFAULT          0x00U    // Logs system exceptions / errors
-#define LOG_FUNCTION_ENTRY            0x01U    // Logs the entries to the PCAN-Basic API functions 
-#define LOG_FUNCTION_PARAMETERS       0x02U    // Logs the parameters passed to the PCAN-Basic API functions 
-#define LOG_FUNCTION_LEAVE            0x04U    // Logs the exits from the PCAN-Basic API functions 
+#define LOG_FUNCTION_ENTRY            0x01U    // Logs the entries to the PCAN-Basic API functions
+#define LOG_FUNCTION_PARAMETERS       0x02U    // Logs the parameters passed to the PCAN-Basic API functions
+#define LOG_FUNCTION_LEAVE            0x04U    // Logs the exits from the PCAN-Basic API functions
 #define LOG_FUNCTION_WRITE            0x08U    // Logs the CAN messages passed to the CAN_Write function
 #define LOG_FUNCTION_READ             0x10U    // Logs the CAN messages received within the CAN_Read function
 #define LOG_FUNCTION_ALL              0xFFFFU  // Logs all possible information within the PCAN-Basic API functions
@@ -269,30 +266,46 @@
 #define TRACE_FILE_DATE               0x02U  // Includes the date into the name of the trace file
 #define TRACE_FILE_TIME               0x04U  // Includes the start time into the name of the trace file
 #define TRACE_FILE_OVERWRITE          0x80U  // Causes the overwriting of available traces (same name)
+#define TRACE_FILE_DATA_LENGTH        0x100U // Causes using the data length column ('l') instead of the DLC column ('L') in the trace file
 
-#define FEATURE_FD_CAPABLE            0x01U  // Device supports flexible data-rate (CAN-FD)
+#define FEATURE_FD_CAPABLE            0x01U  // Device supports the subsequent development of the classic CAN bus (CAN FD)
 #define FEATURE_DELAY_CAPABLE         0x02U  // Device supports a delay between sending frames (FPGA based USB devices)
 #define FEATURE_IO_CAPABLE            0x04U  // Device supports I/O functionality for electronic circuits (USB-Chip devices)
+#define FEATURE_XL_CAPABLE            0x08U  // Device supports the subsequent development of the classic CAN bus (CAN-XL)
 
 #define SERVICE_STATUS_STOPPED        0x01U  // The service is not running
 #define SERVICE_STATUS_RUNNING        0x04U  // The service is running
 
+#define LAN_DIRECTION_READ           0x01U  // The PCAN-Channel is limited to incoming communication only
+#define LAN_DIRECTION_WRITE          0x02U  // The PCAN-Channel is limited to outgoing communication only
+#define LAN_DIRECTION_READ_WRITE     (LAN_DIRECTION_READ | LAN_DIRECTION_WRITE) // The PCAN-Channel communication is bidirectional
+
 // Other constants
 //
-#define MAX_LENGTH_HARDWARE_NAME      33     // Maximum length of the name of a device: 32 characters + terminator
-#define MAX_LENGTH_VERSION_STRING     256    // Maximum length of a version string: 255 characters + terminator
+#define MAX_LENGTH_HARDWARE_NAME      33          // Maximum length of the name of a device: 32 characters + terminator
+#define MAX_LENGTH_VERSION_STRING     256         // Maximum length of a version string: 255 characters + terminator
+#define MAX_LENGTH_DATA_XL            2048        // Maximum amount of data bytes of a CAN-XL message
+#define MAX_VALUE_STANDARD_ID         0x7FF       // Maximum value for a standard CAN ID of a CAN CC/FD message
+#define MAX_VALUE_EXTENDED_ID         0x1FFFFFFF  // Maximum value for an extended CAN ID of a CAN CC/FD message
+#define MAX_VALUE_PRIORITY_ID         0x7FF       // Maximum value for a Priority ID of a CAN XL message
 
 // PCAN message types
 //
-#define PCAN_MESSAGE_STANDARD         0x00U  // The PCAN message is a CAN Standard Frame (11-bit identifier)
-#define PCAN_MESSAGE_RTR              0x01U  // The PCAN message is a CAN Remote-Transfer-Request Frame
-#define PCAN_MESSAGE_EXTENDED         0x02U  // The PCAN message is a CAN Extended Frame (29-bit identifier)
-#define PCAN_MESSAGE_FD               0x04U  // The PCAN message represents a FD frame in terms of CiA Specs
-#define PCAN_MESSAGE_BRS              0x08U  // The PCAN message represents a FD bit rate switch (CAN data at a higher bit rate)
-#define PCAN_MESSAGE_ESI              0x10U  // The PCAN message represents a FD error state indicator(CAN FD transmitter was error active)
-#define PCAN_MESSAGE_ECHO	          0x20U  // The PCAN message represents an echo CAN Frame
-#define PCAN_MESSAGE_ERRFRAME         0x40U  // The PCAN message represents an error frame
-#define PCAN_MESSAGE_STATUS           0x80U  // The PCAN message represents a PCAN status message
+#define PCAN_MESSAGE_STANDARD            0x00U  // The PCAN message is a CAN Standard Frame (11-bit identifier)
+#define PCAN_MESSAGE_RTR                 0x01U  // The PCAN message is a CAN Remote-Transfer-Request Frame
+#define PCAN_MESSAGE_EXTENDED            0x02U  // The PCAN message is a CAN Extended Frame (29-bit identifier)
+#define PCAN_MESSAGE_FD                  0x04U  // The PCAN message represents a FD frame in terms of CiA Specs
+#define PCAN_MESSAGE_BRS                 0x08U  // The PCAN message represents a FD bit rate switch (CAN data at a higher bit rate)
+#define PCAN_MESSAGE_ESI                 0x10U  // The PCAN message represents a FD error state indicator(CAN FD transmitter was error active)
+#define PCAN_MESSAGE_ECHO	             0x20U  // The PCAN message represents an echo CAN Frame
+#define PCAN_MESSAGE_ERRFRAME            0x40U  // The PCAN message represents an error frame
+#define PCAN_MESSAGE_STATUS              0x80U  // The PCAN message represents a PCAN status message
+
+// PCAN message types XL
+//
+#define PCAN_MESSAGE_XL                 0x100U  // The PCAN message represents a XL frame in terms of CiA Specs
+#define PCAN_MESSAGE_PROTOCOL_EXCEPTION 0x200U  // The PCAN message represents a protocol exception from CAN core
+#define PCAN_MESSAGE_ERROR_NOTIFICATION 0x400U  // The PCAN message represents an error notification from CAN core
 
 // LookUp Parameters
 //
@@ -300,16 +313,14 @@
 #define LOOKUP_DEVICE_ID            __T("deviceid")         // Lookup channel by device id
 #define LOOKUP_CONTROLLER_NUMBER    __T("controllernumber") // Lookup channel by CAN controller 0-based index
 #define LOOKUP_IP_ADDRESS           __T("ipaddress")        // Lookup channel by IP address (LAN channels only)
+#define LOOKUP_DEVICE_GUID          __T("deviceguid")       // Lookup channel by device unique identifier (USB channels only)
 
 // Frame Type / Initialization Mode
 //
-#define PCAN_MODE_STANDARD            PCAN_MESSAGE_STANDARD  
-#define PCAN_MODE_EXTENDED            PCAN_MESSAGE_EXTENDED  
+#define PCAN_MODE_STANDARD            PCAN_MESSAGE_STANDARD
+#define PCAN_MODE_EXTENDED            PCAN_MESSAGE_EXTENDED
 
 // Baud rate codes = BTR0/BTR1 register values for the CAN controller.
-// You can define your own Baud rate with the BTROBTR1 register.
-// Take a look at www.peak-system.com for our free software "BAUDTOOL" 
-// to calculate the BTROBTR1 register for every bit rate and sample point.
 //
 #define PCAN_BAUD_1M                  0x0014U  //   1 MBit/s
 #define PCAN_BAUD_800K                0x0016U  // 800 kBit/s
@@ -327,35 +338,49 @@
 #define PCAN_BAUD_5K                  0x7F7FU  //   5 kBit/s
 
 // Represents the configuration for a CAN bit rate
-// Note: 
+// Note:
 //    * Each parameter and its value must be separated with a '='.
-//    * Each pair of parameter/value must be separated using ','. 
+//    * Each pair of parameter/value must be separated using ','.
 //
 // Example:
 //    f_clock=80000000,nom_brp=10,nom_tseg1=5,nom_tseg2=2,nom_sjw=1,data_brp=4,data_tseg1=7,data_tseg2=2,data_sjw=1
 //
-#define PCAN_BR_CLOCK                 __T("f_clock")
-#define PCAN_BR_CLOCK_MHZ             __T("f_clock_mhz")
-#define PCAN_BR_NOM_BRP               __T("nom_brp")
-#define PCAN_BR_NOM_TSEG1             __T("nom_tseg1")
-#define PCAN_BR_NOM_TSEG2             __T("nom_tseg2")
-#define PCAN_BR_NOM_SJW               __T("nom_sjw")
-#define PCAN_BR_NOM_SAMPLE            __T("nom_sam")
-#define PCAN_BR_DATA_BRP              __T("data_brp")
-#define PCAN_BR_DATA_TSEG1            __T("data_tseg1")
-#define PCAN_BR_DATA_TSEG2            __T("data_tseg2")
-#define PCAN_BR_DATA_SJW              __T("data_sjw")
-#define PCAN_BR_DATA_SAMPLE           __T("data_ssp_offset")
+#define PCAN_BR_CLOCK                 __T("f_clock")                // Clock frequency in Herz (160000000, 80000000, 60000000, 40000000, 30000000, 24000000, 20000000)
+#define PCAN_BR_CLOCK_MHZ             __T("f_clock_mhz")            // Clock frequency in Megaherz (160, 80, 60, 40, 30, 24, 20)
 
-// Type of PCAN (Non-PnP) hardware
+// CAN-FD Bit rate specific values
 //
-#define PCAN_TYPE_ISA                 0x01U  // PCAN-ISA 82C200
-#define PCAN_TYPE_ISA_SJA             0x09U  // PCAN-ISA SJA1000
-#define PCAN_TYPE_ISA_PHYTEC          0x04U  // PHYTEC ISA 
-#define PCAN_TYPE_DNG                 0x02U  // PCAN-Dongle 82C200
-#define PCAN_TYPE_DNG_EPP             0x03U  // PCAN-Dongle EPP 82C200
-#define PCAN_TYPE_DNG_SJA             0x05U  // PCAN-Dongle SJA1000
-#define PCAN_TYPE_DNG_SJA_EPP         0x06U  // PCAN-Dongle EPP SJA1000
+#define PCAN_BR_NOM_BRP               __T("nom_brp")                // Clock prescaler for nominal time quantum
+#define PCAN_BR_NOM_TSEG1             __T("nom_tseg1")              // TSEG1 segment for nominal bit rate in time quanta
+#define PCAN_BR_NOM_TSEG2             __T("nom_tseg2")              // TSEG2 segment for nominal bit rate in time quanta
+#define PCAN_BR_NOM_SJW               __T("nom_sjw")                // Synchronization Jump Width for nominal bit rate in time quanta
+#define PCAN_BR_NOM_SAMPLE            __T("nom_sam")                // Sample point for nominal bit rate
+#define PCAN_BR_DATA_BRP              __T("data_brp")               // Clock prescaler for highspeed data time quantum
+#define PCAN_BR_DATA_TSEG1            __T("data_tseg1")             // TSEG1 segment for fast data bit rate in time quanta
+#define PCAN_BR_DATA_TSEG2            __T("data_tseg2")             // TSEG2 segment for fast data bit rate in time quanta
+#define PCAN_BR_DATA_SJW              __T("data_sjw")               // Synchronization Jump Width for highspeed data bit rate in time quanta
+#define PCAN_BR_DATA_SAMPLE           __T("data_ssp_offset")        // DEPRECATED: Secondary sample point delay for highspeed data bit rate in cycles
+                                                                    //             Use "PCAN_BR_DATA_SSP_OFFSET" instead
+#define PCAN_BR_DATA_SSP_OFFSET       __T("data_ssp_offset")        // Secondary sample point delay for highspeed data bit rate in cycles
+
+// CAN-XL Bit rate specific values
+//
+#define PCAN_BR_BRP                         __T("brp")              // Clock prescaler for nominal, CAN FD and CAN XL bit rates
+#define PCAN_BR_FD_TSEG1                    __T("fd_tseg1")         // Clock prescaler for fast data time quantum
+#define PCAN_BR_FD_TSEG2                    __T("fd_tseg2")         // Clock prescaler for fast data time quantum
+#define PCAN_BR_FD_SJW                      __T("fd_sjw")           // Synchronization Jump Width for fast data bit rate in time quanta
+#define PCAN_BR_FD_SSP_OFFSET               __T("fd_ssp_offset")    // Secondary sample point delay for fast data bit rate in cycles
+#define PCAN_BR_XL_TSEG1                    __T("xl_tseg1")         // Clock prescaler for XL time quantum
+#define PCAN_BR_XL_TSEG2                    __T("xl_tseg2")         // Clock prescaler for XL time quantum
+#define PCAN_BR_XL_SJW                      __T("xl_sjw")           // Synchronization Jump Width for XL bit rate in time quanta
+#define PCAN_BR_XL_SSP_OFFSET               __T("xl_ssp_offset")    // Secondary sample point delay for XL bit rate in cycles
+#define PCAN_BR_XL_PWM_OFFSET               __T("xl_pwm_offset")    // CAN XL PWM Offset in mtq ticks == f_cancore cycles
+#define PCAN_BR_XL_PWM_SHORT                __T("xl_pwm_short")     // CAN XL PWM Short phase in mtq ticks == f_cancore cycles
+#define PCAN_BR_XL_PWM_LONG                 __T("xl_pwm_long")      // CAN XL PWM Long phase in mtq ticks == f_cancore cycles
+#define PCAN_BR_XL_TRANSCEIVER_MODE_SWITCH  __T("xl_transceiver_mode_switch") // 1 = CAN XL Data Phase uses 'fast TX' or 'fast RX' with PWM encoding
+                                                                              // 0 = CAN XL Data Phase uses no PWM encoding (recessive/dominant only, like CAN FD)
+#define PCAN_BR_XL_ERROR_SIGNALING          __T("xl_error_signaling") // 1 = Error Signaling with Error Frame in case of bus errors
+                                                                      // 0 = No Error Signaling
 
 ////////////////////////////////////////////////////////////
 // Type definitions
@@ -366,11 +391,14 @@
 #define TPCANParameter                BYTE   // Represents a PCAN parameter to be read or set
 #define TPCANDevice                   BYTE   // Represents a PCAN device
 #define TPCANMessageType              BYTE   // Represents the type of a PCAN message
-#define TPCANType                     BYTE   // Represents the type of PCAN hardware to be initialized
+#define TPCANMessageTypeXL            WORD   // Represents the type of a PCAN XL message
 #define TPCANMode                     BYTE   // Represents a PCAN filter mode
-#define TPCANBaudrate                 WORD   // Represents a PCAN Baud rate register value
-#define TPCANBitrateFD                LPSTR  // Represents a PCAN-FD bit rate string
+#define TPCANBaudrate                 WORD   // Represents a PCAN Baud Rate Timing Register value
+#define TPCANBitrateCC                LPSTR  // Represents a PCAN classic bit rate string
+#define TPCANBitrateFD                LPSTR  // Represents a PCAN FD bit rate string
+#define TPCANBitrateXL                LPSTR  // Represents a PCAN XL bit rate string
 #define TPCANTimestampFD              UINT64 // Represents a timestamp of a received PCAN FD message
+#define TPCANTimestampXL              TPCANTimestampFD // Represents a timestamp of a received PCAN XL message
 
 ////////////////////////////////////////////////////////////
 // Structure definitions
@@ -387,7 +415,7 @@ typedef struct tagTPCANMsg
 } TPCANMsg;
 
 // Represents a timestamp of a received PCAN message
-// Total Microseconds = micros + 1000 * millis + 0x100000000 * 1000 * millis_overflow
+// Total Microseconds = micros + (1000ULL * millis) + (0x100000000ULL * 1000ULL * millis_overflow)
 //
 typedef struct tagTPCANTimestamp
 {
@@ -406,17 +434,36 @@ typedef struct tagTPCANMsgFD
     BYTE              DATA[64]; // Data of the message (DATA[0]..DATA[63])
 } TPCANMsgFD;
 
+// Represents a PCAN message from a XL capable hardware
+// REMARKS:
+// CAN-CC/CAN-FD: only the fields PID, MSGTYPE, DLC,and DATA are used.
+// Additonal CAN-XL related fields are ignored
+//
+typedef struct tagTPCANMsgXL
+{
+    DWORD                PID;        // CAN-XL: Priority ID (physical layer) (0..0x7FF)
+                                    // CAN-CC/CAN-FD: 11/29-bit message identifier
+    BYTE                VCID;       // Virtual CAN network ID
+    TPCANMessageTypeXL  MSGTYPE;    // Type of the message
+    WORD                DLC;        // Data Length Code of the message (0..2047)
+    BYTE                SDT;        // Service Data unit(SDU) protocol Type
+    DWORD               AF;         // Acceptance Field, SDU - specific high - layer ID
+    BYTE                RRS;        // Remote Request Substitution flag (0..1)
+    BYTE                SEC;        // Simple Extended Content flag (0..1)
+    BYTE                DATA[2048]; // Data of the message (DATA[0]..DATA[2047])
+}TPCANMsgXL;
+
 // Describes an available PCAN channel
 //
 typedef struct tagTPCANChannelInformation
 {
-    TPCANHandle channel_handle;                 // PCAN channel handle   
+    TPCANHandle channel_handle;                 // PCAN channel handle
     TPCANDevice device_type;                    // Kind of PCAN device
     BYTE controller_number;                     // CAN-Controller number
     DWORD device_features;                      // Device capabilities flag (see FEATURE_*)
     char device_name[MAX_LENGTH_HARDWARE_NAME]; // Device name
-    DWORD device_id;                            // Device number   
-    DWORD channel_condition;                    // Availability status of a PCAN-Channel          
+    DWORD device_id;                            // Device number
+    DWORD channel_condition;                    // Availability status of a PCAN-Channel
 }TPCANChannelInformation;
 
 #ifdef __cplusplus
@@ -432,24 +479,24 @@ extern "C" {
 
 
 /// <summary>
-/// Initializes a PCAN Channel 
+/// Initializes a PCAN Channel
 /// </summary>
 /// <param name="Channel">"The handle of a PCAN Channel"</param>
 /// <param name="Btr0Btr1">"The speed for the communication (BTR0BTR1 code)"</param>
-/// <param name="HwType">"Non-PnP: The type of hardware and operation mode"</param>
-/// <param name="IOPort">"Non-PnP: The I/O address for the parallel port"</param>
-/// <param name="Interrupt">"Non-PnP: Interrupt number of the parallel port"</param>
+/// <param name="deprecated1">"Deprecated. Parameter is ignored"</param>
+/// <param name="deprecated2">"Deprecated. Parameter is ignored"</param>
+/// <param name="deprecated3">"Deprecated. Parameter is ignored"</param>
 /// <returns>"A TPCANStatus error code"</returns>
 TPCANStatus __stdcall CAN_Initialize(
-        TPCANHandle Channel, 
-        TPCANBaudrate Btr0Btr1, 
-        TPCANType HwType _DEF_ARG,
-        DWORD IOPort _DEF_ARG, 
-        WORD Interrupt _DEF_ARG);
+        TPCANHandle Channel,
+        TPCANBaudrate Btr0Btr1,
+        BYTE deprecated1 _DEF_ARG,
+        DWORD deprecated2 _DEF_ARG,
+        WORD deprecated3 _DEF_ARG);
 
 
 /// <summary>
-/// Initializes a FD capable PCAN Channel  
+/// Initializes a FD capable PCAN Channel
 /// </summary>
 /// <param name="Channel">"The handle of a FD capable PCAN Channel"</param>
 /// <param name="BitrateFD">"The speed for the communication (FD bit rate string)"</param>
@@ -459,18 +506,38 @@ TPCANStatus __stdcall CAN_Initialize(
 /// * Following Parameter must be filled out: f_clock, data_brp, data_sjw, data_tseg1, data_tseg2,
 ///   nom_brp, nom_sjw, nom_tseg1, nom_tseg2.
 /// * Following Parameters are optional (not used yet): data_ssp_offset, nom_sam
-///</remarks>
+/// </remarks>
 /// <example>f_clock=80000000,nom_brp=10,nom_tseg1=5,nom_tseg2=2,nom_sjw=1,data_brp=4,data_tseg1=7,data_tseg2=2,data_sjw=1</example>
 /// <returns>"A TPCANStatus error code"</returns>
 TPCANStatus __stdcall CAN_InitializeFD(
     TPCANHandle Channel,
     TPCANBitrateFD BitrateFD);
 
+/// <summary>
+/// Initializes a XL capable PCAN Channel
+/// </summary>
+/// <param name="Channel">The handle of a XL capable PCAN Channel"</param>
+/// <param name="BitrateXL">"The speed for the communication (XL bit rate string)"</param>
+/// <remarks>See PCAN_BR_* values
+/// * Parameter and values must be separated by '='
+/// * Couples of Parameter/value must be separated by ','
+/// * Following Parameter must be filled out: f_clock, brp, nom_brp, nom_sjw, nom_tseg1, nom_tseg2.
+///   If xl_transceiver_mode_switch is active, also the parameters xl_sjw, xl_tseg1, and xl_tseg2, must be present.
+///   If error_signaling is active, also the parameters fd_sjw, fd_tseg1, and fd_tseg2, must be present.
+/// * Following Parameters are optional: fd_ssp_offset, xl_ssp_offset, xl_transceiver_mode_switch, error_signaling,
+///   xl_pwm_offset, xl_pwm_short, and xl_pwm_long
+/// </remarks>
+/// <example>f_clock=160000000,brp=1,nom_tseg1=255,nom_tseg2=64,nom_sjw=64,fd_tseg1=63,fd_tseg2=16,fd_sjw=16,fd_ssp_offset=0,xl_tseg1=10,
+/// xl_tseg2=9,xl_sjw=9,xl_ssp_offset=10,xl_error_signaling=1,xl_transceiver_mode_switch=0</example>
+/// <returns>"A TPCANStatus error code"</returns>
+TPCANStatus __stdcall CAN_InitializeXL(
+    TPCANHandle Channel,
+    TPCANBitrateXL BitrateXL);
 
 /// <summary>
 /// Uninitializes one or all PCAN Channels initialized by CAN_Initialize
 /// </summary>
-/// <remarks>Giving the TPCANHandle value "PCAN_NONEBUS", 
+/// <remarks>Giving the TPCANHandle value "PCAN_NONEBUS",
 /// uninitialize all initialized channels</remarks>
 /// <param name="Channel">"The handle of a PCAN Channel"</param>
 /// <returns>"A TPCANStatus error code"</returns>
@@ -479,7 +546,7 @@ TPCANStatus __stdcall CAN_Uninitialize(
 
 
 /// <summary>
-/// Resets the receive and transmit queues of the PCAN Channel  
+/// Resets the receive and transmit queues of the PCAN Channel
 /// </summary>
 /// <remarks>
 /// A reset of the CAN controller is not performed.
@@ -491,7 +558,7 @@ TPCANStatus __stdcall CAN_Reset(
 
 
 /// <summary>
-/// Gets the current status of a PCAN Channel 
+/// Gets the current status of a PCAN Channel
 /// </summary>
 /// <param name="Channel">"The handle of a PCAN Channel"</param>
 /// <returns>"A TPCANStatus error code"</returns>
@@ -500,43 +567,57 @@ TPCANStatus __stdcall CAN_GetStatus(
 
 
 /// <summary>
-/// Reads a CAN message from the receive queue of a PCAN Channel 
+/// Reads a CAN message from the receive queue of a PCAN Channel
 /// </summary>
 /// <param name="Channel">"The handle of a PCAN Channel"</param>
 /// <param name="MessageBuffer">"A TPCANMsg structure buffer to store the CAN message"</param>
-/// <param name="TimestampBuffer">"A TPCANTimestamp structure buffer to get 
+/// <param name="TimestampBuffer">"A TPCANTimestamp structure buffer to get
 /// the reception time of the message. If this value is not desired, this parameter
 /// should be passed as NULL"</param>
 /// <returns>"A TPCANStatus error code"</returns>
 TPCANStatus __stdcall CAN_Read(
-        TPCANHandle Channel, 
-        TPCANMsg* MessageBuffer, 
+        TPCANHandle Channel,
+        TPCANMsg* MessageBuffer,
         TPCANTimestamp* TimestampBuffer);
 
 
 /// <summary>
-/// Reads a CAN message from the receive queue of a FD capable PCAN Channel 
+/// Reads a CAN message from the receive queue of a FD capable PCAN Channel
 /// </summary>
 /// <param name="Channel">"The handle of a FD capable PCAN Channel"</param>
 /// <param name="MessageBuffer">"A TPCANMsgFD structure buffer to store the CAN message"</param>
-/// <param name="TimestampBuffer">"A TPCANTimestampFD buffer to get 
+/// <param name="TimestampBuffer">"A TPCANTimestampFD buffer to get
 /// the reception time of the message. If this value is not desired, this parameter
 /// should be passed as NULL"</param>
 /// <returns>"A TPCANStatus error code"</returns>
 TPCANStatus __stdcall CAN_ReadFD(
     TPCANHandle Channel,
-    TPCANMsgFD* MessageBuffer, 
+    TPCANMsgFD* MessageBuffer,
     TPCANTimestampFD *TimestampBuffer);
+
+/// <summary>
+/// Reads a CAN message from the receive queue of a XL capable PCAN Channel
+/// </summary>
+/// <param name="Channel">"The handle of a XL capable PCAN Channel"</param>
+/// <param name="MessageBuffer">"A TPCANMsgXL structure buffer to store the CAN message"</param>
+/// <param name="TimestampBuffer">"A TPCANTimestampXL buffer to get
+/// the reception time of the message. If this value is not desired, this parameter
+/// should be passed as NULL"</param>
+/// <returns>"A TPCANStatus error code"</returns>
+TPCANStatus __stdcall CAN_ReadXL(
+    TPCANHandle Channel,
+    TPCANMsgXL* MessageBuffer,
+    TPCANTimestampXL* TimestampBuffer);
 
 
 /// <summary>
-/// Transmits a CAN message 
+/// Transmits a CAN message
 /// </summary>
 /// <param name="Channel">"The handle of a PCAN Channel"</param>
 /// <param name="MessageBuffer">"A TPCANMsg buffer with the message to be sent"</param>
 /// <returns>"A TPCANStatus error code"</returns>
 TPCANStatus __stdcall CAN_Write(
-        TPCANHandle Channel, 
+        TPCANHandle Channel,
         TPCANMsg* MessageBuffer);
 
 
@@ -550,30 +631,39 @@ TPCANStatus __stdcall CAN_WriteFD(
     TPCANHandle Channel,
     TPCANMsgFD* MessageBuffer);
 
+/// <summary>
+/// Transmits a CAN message over a XL capable PCAN Channel
+/// </summary>
+/// <param name="Channel">"The handle of a XL capable PCAN Channel"</param>
+/// <param name="MessageBuffer">"A TPCANMsgXL buffer with the message to be sent"</param>
+/// <returns></returns>
+TPCANStatus __stdcall CAN_WriteXL(
+    TPCANHandle Channel,
+    TPCANMsgXL* MessageBuffer);
 
 /// <summary>
-/// Configures the reception filter. 
+/// Configures the reception filter.
 /// </summary>
-/// <remarks>The message filter will be expanded with every call to 
-/// this function. If it is desired to reset the filter, please use 
+/// <remarks>The message filter will be expanded with every call to
+/// this function. If it is desired to reset the filter, please use
 /// the CAN_SetValue function</remarks>
 /// <param name="Channel">"The handle of a PCAN Channel"</param>
 /// <param name="FromID">"The lowest CAN ID to be received"</param>
 /// <param name="ToID">"The highest CAN ID to be received"</param>
-/// <param name="Mode">"Message type, Standard (11-bit identifier) or 
+/// <param name="Mode">"Message type, Standard (11-bit identifier) or
 /// Extended (29-bit identifier)"</param>
 /// <returns>"A TPCANStatus error code"</returns>
 TPCANStatus __stdcall CAN_FilterMessages(
-        TPCANHandle Channel, 
-        DWORD FromID, 
-        DWORD ToID, 
+        TPCANHandle Channel,
+        DWORD FromID,
+        DWORD ToID,
         TPCANMode Mode);
 
 
 /// <summary>
 /// Retrieves a PCAN Channel value
 /// </summary>
-/// <remarks>Parameters can be present or not according with the kind 
+/// <remarks>Parameters can be present or not according with the kind
 /// of Hardware (PCAN Channel) being used. If a parameter is not available,
 /// a PCAN_ERROR_ILLPARAMTYPE error will be returned</remarks>
 /// <param name="Channel">"The handle of a PCAN Channel"</param>
@@ -582,16 +672,16 @@ TPCANStatus __stdcall CAN_FilterMessages(
 /// <param name="BufferLength">"Size in bytes of the buffer"</param>
 /// <returns>"A TPCANStatus error code"</returns>
 TPCANStatus __stdcall CAN_GetValue(
-        TPCANHandle Channel, 
-        TPCANParameter Parameter,  
-        void* Buffer, 
+        TPCANHandle Channel,
+        TPCANParameter Parameter,
+        void* Buffer,
         DWORD BufferLength);
 
 
 /// <summary>
-/// Configures or sets a PCAN Channel value 
+/// Configures or sets a PCAN Channel value
 /// </summary>
-/// <remarks>Parameters can be present or not according with the kind 
+/// <remarks>Parameters can be present or not according with the kind
 /// of Hardware (PCAN Channel) being used. If a parameter is not available,
 /// a PCAN_ERROR_ILLPARAMTYPE error will be returned</remarks>
 /// <param name="Channel">"The handle of a PCAN Channel"</param>
@@ -607,10 +697,10 @@ TPCANStatus __stdcall CAN_SetValue(
 
 
 /// <summary>
-/// Returns a descriptive text of a given TPCANStatus error 
+/// Returns a descriptive text of a given TPCANStatus error
 /// code, in any desired language
 /// </summary>
-/// <remarks>The current languages available for translation are: 
+/// <remarks>The current languages available for translation are:
 /// Neutral (0x00), German (0x07), English (0x09), Spanish (0x0A),
 /// Italian (0x10) and French (0x0C)</remarks>
 /// <param name="Error">"A TPCANStatus error code"</param>
@@ -618,20 +708,20 @@ TPCANStatus __stdcall CAN_SetValue(
 /// <param name="Buffer">"Buffer for a null terminated char array"</param>
 /// <returns>"A TPCANStatus error code"</returns>
 TPCANStatus __stdcall CAN_GetErrorText(
-        TPCANStatus Error, 
-        WORD Language, 
+        TPCANStatus Error,
+        WORD Language,
         LPSTR Buffer);
 
 /// <summary>
 /// Finds a PCAN-Basic channel that matches with the given parameters
 /// </summary>
-/// <param name="Parameters">A comma separated string contained pairs of 
+/// <param name="Parameters">A comma separated string contained pairs of
 /// parameter-name/value to be matched within a PCAN-Basic channel</param>
-/// <param name="FoundChannel">Buffer for returning the PCAN-Basic channel, 
+/// <param name="FoundChannel">Buffer for returning the PCAN-Basic channel,
 /// when found</param>
 /// <returns>A TPCANStatus error code</returns>
 TPCANStatus __stdcall CAN_LookUpChannel(
-    LPSTR Parameters, 
+    LPSTR Parameters,
     TPCANHandle* FoundChannel);
 
 #ifdef __cplusplus

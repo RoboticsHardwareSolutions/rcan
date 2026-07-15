@@ -57,8 +57,28 @@ if (APPLE)
 endif ()
 
 if (UNIX AND NOT APPLE)
+    # The vendored libpcanbasic.so used to be a prebuilt binary, which only
+    # worked on whatever architecture it happened to be built for. Build it
+    # from PEAK-System's official source instead, so it always matches the
+    # host architecture.
     set(RCAN_THIRDPARTY ${CMAKE_CURRENT_LIST_DIR}/thirdparty/PCAN-Basic-linux)
-    link_directories(${CMAKE_CURRENT_LIST_DIR}/thirdparty/PCAN-Basic-linux)
+    set(PCANBASIC_SRC_DIR ${RCAN_THIRDPARTY}/pcanbasic-src)
+    set(PCANBASIC_LIB_DIR ${PCANBASIC_SRC_DIR}/lib)
+    set(PCANBASIC_LIB ${PCANBASIC_LIB_DIR}/libpcanbasic.so)
+
+    file(GLOB_RECURSE PCANBASIC_SOURCES ${PCANBASIC_SRC_DIR}/src/*.c ${PCANBASIC_SRC_DIR}/src/*.h)
+    add_custom_command(
+            OUTPUT ${PCANBASIC_LIB}
+            COMMAND make -C ${PCANBASIC_SRC_DIR}
+                    PCANFD_HEADER=${PCANBASIC_SRC_DIR}/src/pcan/driver/pcanxl.h
+                    all
+            DEPENDS ${PCANBASIC_SOURCES}
+            COMMENT "Building libpcanbasic from source for the host architecture"
+            VERBATIM
+    )
+    add_custom_target(pcanbasic_build DEPENDS ${PCANBASIC_LIB})
+
+    set(RCAN_THIRDPARTY ${RCAN_THIRDPARTY} ${PCANBASIC_SRC_DIR}/include ${PCANBASIC_SRC_DIR}/src/pcan/driver)
     set(PCBUSB_LIBRARIES pcanbasic)
     set(RCAN_LIBRARIES ${PCBUSB_LIBRARIES})
     set(RCAN_LIBRARIES ${RCAN_LIBRARIES} socketcan rnode)
@@ -67,6 +87,17 @@ endif ()
 
 add_library(${PROJECT_NAME} STATIC ${RCAN_SOURCES})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${RCAN_LIBRARIES})
+
+if (UNIX AND NOT APPLE)
+    add_dependencies(${PROJECT_NAME} pcanbasic_build)
+    # PUBLIC so link_directories/rpath propagate transitively to any
+    # executable that links rcan, not just targets defined in this directory
+    # (link_directories() alone is scoped to this CMakeLists.txt).
+    target_link_directories(${PROJECT_NAME} PUBLIC ${PCANBASIC_LIB_DIR})
+    # Bake the freshly built library's location into consumers' rpath so the
+    # test/sim binaries can find it at runtime without a system install.
+    target_link_options(${PROJECT_NAME} PUBLIC "LINKER:-rpath,${PCANBASIC_LIB_DIR}")
+endif ()
 target_include_directories(${PROJECT_NAME}
         PUBLIC
         ./
