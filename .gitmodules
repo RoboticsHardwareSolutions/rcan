@@ -1,6 +1,1 @@
-[submodule "test/runit"]
-	path = test/runit
-	url = https://github.com/RoboticsHardwareSolutions/runit.git
-[submodule "rnode"]
-	path = rnode
-	url = https://github.com/RoboticsHardwareSolutions/rnode.git
+
