@@ -1,13 +1,15 @@
 #pragma once
 
-#if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
+#include "rcan_backend.h"
+
+#if defined(RCAN_BACKEND_HOST)
 
 #    include "stdbool.h"
 #    include "rcan_def.h"
 #    include "rcan.h"
 #    include "rcan_timing.h"
 #    include "rcan_filter.h"
-#    include "rnode/rnode.h"
+#    include "rnode.h"
 
 struct can_iface
 {
@@ -33,4 +35,4 @@ bool u_can_receive(rcan* can, rcan_frame* frame);
 
 bool u_can_stop(rcan* can);
 
-#endif  // defined(RCAN_UNIX) || defined(RCAN_MACOS) || defined(RCAN_WINDOWS)
+#endif  // defined(RCAN_BACKEND_HOST)

@@ -3,15 +3,12 @@
 #include "stdint.h"
 #include "inttypes.h"
 
-#if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
-#    include "u_can.h"
-#endif
-#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
-#    include "bx_can.h"
-#endif
-#if defined(STM32G474xx) || defined(STM32G0B1xx)
-#    include "bx_canfd.h"
+#if defined(RCAN_BACKEND_HOST)
+#    define RCAN_BACKEND(fn) u_can_##fn
+#elif defined(RCAN_BACKEND_BXCAN)
+#    define RCAN_BACKEND(fn) bx_can_##fn
+#elif defined(RCAN_BACKEND_BXCANFD)
+#    define RCAN_BACKEND(fn) bx_canfd_##fn
 #endif
 
 bool rcan_filter_preconfiguration(rcan* can, uint32_t* accepted_ids, uint32_t size)
@@ -21,18 +18,7 @@ bool rcan_filter_preconfiguration(rcan* can, uint32_t* accepted_ids, uint32_t si
         return false;
     }
 
-#if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
-    return u_can_filter_preconfiguration(can, accepted_ids, size);
-#endif
-
-#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
-    return bx_can_filter_preconfiguration(can, accepted_ids, size);
-#endif
-
-#if defined(STM32G474xx) || defined(STM32G0B1xx)
-    return bx_canfd_filter_preconfiguration(can, accepted_ids, size);
-#endif  // defined(STM32G474xx) || defined(STM32G0B1xx)
+    return RCAN_BACKEND(filter_preconfiguration)(can, accepted_ids, size);
 }
 
 bool rcan_start(rcan* can, uint32_t channel, uint32_t bitrate)
@@ -42,18 +28,7 @@ bool rcan_start(rcan* can, uint32_t channel, uint32_t bitrate)
         return false;
     }
 
-#if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
-    return u_can_start(can, channel, bitrate);
-#endif
-
-#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
-    return bx_can_start(can, channel, bitrate);
-#endif
-
-#if defined(STM32G474xx) || defined(STM32G0B1xx)
-    return bx_canfd_start(can, channel, bitrate);
-#endif  // defined(STM32G474xx) || defined(STM32G0B1xx)
+    return RCAN_BACKEND(start)(can, channel, bitrate);
 }
 
 bool rcan_is_ok(rcan* can)
@@ -63,18 +38,7 @@ bool rcan_is_ok(rcan* can)
         return false;
     }
 
-#if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
-    return u_can_is_ok(can);
-#endif
-
-#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
-    return bx_can_is_ok(can);
-#endif
-
-#if defined(STM32G474xx) || defined(STM32G0B1xx)
-    return bx_canfd_is_ok(can);
-#endif
+    return RCAN_BACKEND(is_ok)(can);
 }
 
 bool rcan_stop(rcan* can)
@@ -84,18 +48,7 @@ bool rcan_stop(rcan* can)
         return false;
     }
 
-#if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
-    return u_can_stop(can);
-#endif
-
-#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
-    return bx_can_stop(can);
-#endif
-
-#if defined(STM32G474xx) || defined(STM32G0B1xx)
-    return bx_canfd_stop(can);
-#endif  // defined(STM32G474xx) || defined(STM32G0B1xx)
+    return RCAN_BACKEND(stop)(can);
 }
 
 bool rcan_send(rcan* can, rcan_frame* frame)
@@ -105,18 +58,7 @@ bool rcan_send(rcan* can, rcan_frame* frame)
         return false;
     }
 
-#if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
-    return u_can_send(can, frame);
-#endif
-
-#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
-    return bx_can_send(can, frame);
-#endif
-
-#if defined(STM32G474xx) || defined(STM32G0B1xx)
-    return bx_canfd_send(can, frame);
-#endif  // defined(STM32G474xx) || defined(STM32G0B1xx)
+    return RCAN_BACKEND(send)(can, frame);
 }
 
 bool rcan_receive(rcan* can, rcan_frame* frame)
@@ -126,18 +68,7 @@ bool rcan_receive(rcan* can, rcan_frame* frame)
         return false;
     }
 
-#if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
-    return u_can_receive(can, frame);
-#endif
-
-#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
-    return bx_can_receive(can, frame);
-#endif
-
-#if defined(STM32G474xx) || defined(STM32G0B1xx)
-    return bx_canfd_receive(can, frame);
-#endif  // defined(STM32G474xx) || defined(STM32G0B1xx)
+    return RCAN_BACKEND(receive)(can, frame);
 }
 
 void rcan_view_frame(rcan_frame* frame)
@@ -153,7 +84,10 @@ void rcan_view_frame(rcan_frame* frame)
         return;
     }
 
-    printf("ID : %8" PRIx32 " | %s | LEN : %2d | DATA : ", frame->id, frame->type == std_id ? "STD" : "EXT", frame->len);
+    printf("ID : %8" PRIx32 " | %s | LEN : %2d | DATA : ",
+           frame->id,
+           frame->type == std_id ? "STD" : "EXT",
+           frame->len);
     for (uint8_t i = 0; i < frame->len; i++)
     {
         printf("%02x ", frame->payload[i]);
@@ -161,8 +95,7 @@ void rcan_view_frame(rcan_frame* frame)
     printf("\n");
 }
 
-#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
+#if defined(RCAN_BACKEND_BXCAN)
 bool rcan_async_receive_start(rcan* can)
 {
     HAL_CAN_ActivateNotification(&can->handle, CAN_IT_RX_FIFO0_MSG_PENDING);

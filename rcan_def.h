@@ -1,6 +1,7 @@
 #ifndef __RCAN_DEF_H__
 #define __RCAN_DEF_H__
 
+#include "rcan_backend.h"
 #include "rcan_filter.h"
 #include "rcan_timing.h"
 
@@ -8,9 +9,9 @@
 
 typedef enum
 {
-    nonframe,
-    std_id,
-    ext_id
+    nonframe,  // not a valid frame; rcan_send() rejects it
+    std_id,    // 11-bit standard CAN ID
+    ext_id     // 29-bit extended CAN ID
 } rcan_frame_type;
 
 #pragma pack(push)
@@ -18,10 +19,10 @@ typedef enum
 
 typedef struct
 {
-    uint32_t        id;
-    uint8_t         len;
-    rcan_frame_type type;
-    bool            rtr;
+    uint32_t        id;    // CAN identifier (<= RCAN_STD_ID_MAX or RCAN_EXT_ID_MAX, depending on type)
+    uint8_t         len;   // payload length in bytes, <= RCAN_MAX_FRAME_PAYLOAD_SIZE
+    rcan_frame_type type;  // std_id or ext_id
+    bool            rtr;   // true for a Remote Transmission Request (no payload)
     uint8_t         payload[RCAN_MAX_FRAME_PAYLOAD_SIZE];
 } rcan_frame;
 
@@ -60,49 +61,37 @@ typedef struct
 #define VIRTUAL_IPC_CAN_BUS1 0x1241UL
 #define VIRTUAL_IPC_CAN_BUS2 0x1242UL
 
-#if defined(RCAN_MACOS)
+#if defined(RCAN_BACKEND_HOST)
 
-#    include "PCBUSB.h"
+#    if defined(RCAN_MACOS)
+
+#        include "PCBUSB.h"
+
+#    elif defined(RCAN_UNIX)
+
+#        include "stdlib.h"
+#        include <PCANBasic.h>
+#        include <fcntl.h>
+#        include <libsocketcan.h>
+#        include <linux/can.h>
+#        include <linux/can/raw.h>
+#        include <net/if.h>
+#        include <sys/ioctl.h>
+#        include <sys/socket.h>
+#        include <unistd.h>
+
+#    endif
+
 #    include "u_can.h"
 
-#endif  // defined(RCAN_MACOS)
-
-#if defined(RCAN_UNIX)
-
-#    include "stdlib.h"
-#    include "u_can.h"
-#    include <PCANBasic.h>
-#    include <fcntl.h>
-#    include <libsocketcan.h>
-#    include <linux/can.h>
-#    include <linux/can/raw.h>
-#    include <net/if.h>
-#    include <sys/ioctl.h>
-#    include <sys/socket.h>
-#    include <unistd.h>
-
-#endif  // defined(RCAN_UNIX)
-
-#if defined(RCAN_WINDOWS)
-
-#    include "PCANBasic.h"
-#    include "u_can.h"
-#    include "windows.h"
-
-#endif  // defined(RCAN_UNIX)
-
-#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F407xx) || defined(STM32F429xx) || defined(STM32F103xE)
+#elif defined(RCAN_BACKEND_BXCAN)
 
 #    include "can/bx_can.h"
 
-#endif  // defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB)
-// || defined(STM32F091xC) || defined(STM32F103xB)
-
-#if defined(STM32G474xx) || defined(STM32G0B1xx)
+#elif defined(RCAN_BACKEND_BXCANFD)
 
 #    include "bx_canfd.h"
 
-#endif  // defined(STM32G474xx) || defined(STM32F0B1xx)
+#endif  // defined(RCAN_BACKEND_HOST)
 
 #endif  // __RCAN_DEF_H

@@ -1,6 +1,6 @@
+#include "rcan_backend.h"
 
-#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F103xE)
+#if defined(RCAN_BACKEND_BXCAN)
 
 #    include "bx_can.h"
 
@@ -419,5 +419,4 @@ static bool st_prop_bs1_and_bs2_convert(rcan_timing* source, rcan_timing* result
     return true;
 }
 
-#endif  // defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) ||
-        // defined(STM32F103xB)
+#endif  // defined(RCAN_BACKEND_BXCAN)

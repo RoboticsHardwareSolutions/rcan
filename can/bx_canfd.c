@@ -1,4 +1,6 @@
-#if defined(STM32G474xx) || defined(STM32G0B1xx)
+#include "rcan_backend.h"
+
+#if defined(RCAN_BACKEND_BXCANFD)
 
 #    include "bx_canfd.h"
 
@@ -330,4 +332,4 @@ void HAL_FDCAN_ErrorStatusCallback(FDCAN_HandleTypeDef* hfdcan, uint32_t ErrorSt
         can->err_cb(can, ErrorStatusITs);
 }
 
-#endif  // defined(STM32G474xx) || defined(STM32G0B1xx)
+#endif  // defined(RCAN_BACKEND_BXCANFD)

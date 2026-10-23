@@ -5,15 +5,13 @@ project(rcan
         DESCRIPTION
         "cross platform lib with simple C API for work with CAN BUS")
 
-include(rcmake_macros/rcmake_macros.cmake)
-
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 #################### MAIN SECTION #######################
 
 set(RCAN_HEADER
         rcan.h
+        rcan_backend.h
         rcan_timing.h
         rcan_def.h
         rcan_filter.h
@@ -30,82 +28,117 @@ set(RCAN_SOURCES
         can/bx_can.c
         can/bx_canfd.c
         can/u_can.c
-        can/bx_can.c
-    )
-
-set(RCAN_FILES
-        ${RCAN_HEADER}
-        ${RCAN_SOURCES}
 )
 
-if (MSVC OR MSYS OR MINGW)
-    set(RCAN_THIRDPARTY ${CMAKE_CURRENT_LIST_DIR}/thirdparty/PCAN-Basic-windows)
-    link_directories(${RCAN_DIRECTORIES})
-    find_package(nanomsg CONFIG REQUIRED)
-    set(PCBUSB_LIBRARIES PCANBasic.lib -static gcc stdc++ winpthread -dynamic)
-    set(PCAN_LIBRARIES PCANBasic.lib)
-    file(COPY ${CMAKE_CURRENT_LIST_DIR}/thirdparty/PCAN-Basic-windows/PCANBasic.dll DESTINATION ${PROJECT_BINARY_DIR})
-    set(RCAN_LIBRARIES "${PCAN_LIBRARIES}")
-    set(RCAN_LIBRARIES ${RCAN_LIBRARIES} nanomsg)
+if (APPLE OR (UNIX AND NOT APPLE))
+    if (NOT TARGET rnode)
+        include(FetchContent)
+        FetchContent_Declare(
+                rnode
+                GIT_REPOSITORY https://github.com/RoboticsHardwareSolutions/rnode.git
+                GIT_TAG main
+        )
+        FetchContent_MakeAvailable(rnode)
+    endif ()
 endif ()
 
 if (APPLE)
-    set(RCAN_THIRDPARTY ${CMAKE_CURRENT_LIST_DIR}/thirdparty/PCAN-Basic-mac)
-    find_library(PCAN_LIBRARIES NAMES pcbusb)
-    add_subdirectory(rnode)
+    # PCBUSB is closed-source (PEAK only ships source for the Linux driver), but the
+    # official mac-can/PCBUSB-Library release already ships a prebuilt *static* archive
+    # alongside the dylib - link that directly instead of `find_library()`-ing whatever
+    # (possibly differently-versioned, possibly unsigned) copy happens to be installed
+    # system-wide.
+    if (NOT pcbusb_POPULATED)
+        include(FetchContent)
+        FetchContent_Declare(
+                pcbusb
+                URL https://github.com/mac-can/PCBUSB-Library/releases/download/v0.13/macOS_Library_for_PCANUSB_v0.13.tar.gz
+                URL_HASH SHA256=e06e5d650868b11ecb4c27f03749e61ab43825580c644ec593dd3e7ac7be0dd5
+        )
+        FetchContent_MakeAvailable(pcbusb)
+    endif ()
+
+    set(RCAN_THIRDPARTY ${pcbusb_SOURCE_DIR})
+    set(PCAN_LIBRARIES ${pcbusb_SOURCE_DIR}/libPCBUSB.a)
     set(RCAN_LIBRARIES ${PCAN_LIBRARIES} rnode)
 endif ()
 
 if (UNIX AND NOT APPLE)
-    # The vendored libpcanbasic.so used to be a prebuilt binary, which only
-    # worked on whatever architecture it happened to be built for. Build it
-    # from PEAK-System's official source instead, so it always matches the
-    # host architecture.
-    set(RCAN_THIRDPARTY ${CMAKE_CURRENT_LIST_DIR}/thirdparty/PCAN-Basic-linux)
-    set(PCANBASIC_SRC_DIR ${RCAN_THIRDPARTY}/pcanbasic-src)
-    set(PCANBASIC_LIB_DIR ${PCANBASIC_SRC_DIR}/lib)
-    set(PCANBASIC_LIB ${PCANBASIC_LIB_DIR}/libpcanbasic.so)
+    # PEAK ships libpcanbasic's source as a plain Makefile-based tarball (not a CMake
+    # or autotools project), fetched straight from their own site rather than vendored,
+    # so the version in use is always visible from the URL/hash below.
+    if (NOT pcanbasic_POPULATED)
+        include(FetchContent)
+        FetchContent_Declare(
+                pcanbasic
+                URL "https://www.peak-system.com/produktcd/Develop/PC%20interfaces/Linux/PCAN-Basic_API_for_Linux/PCAN-Basic_Linux-5.0.1.8.tar.gz"
+                URL_HASH SHA256=a7e3b50945201c28e7075d344cd85a877725d9e22945d180d1fbc3ed8fc984f4
+        )
+        FetchContent_MakeAvailable(pcanbasic)
+    endif ()
 
+    set(PCANBASIC_SRC_DIR ${pcanbasic_SOURCE_DIR}/libpcanbasic/pcanbasic)
+    set(PCANBASIC_OUT_DIR ${PCANBASIC_SRC_DIR}/out)
+    set(PCANBASIC_LIB ${PCANBASIC_SRC_DIR}/lib/libpcanbasic.a)
+
+    # PEAK's own Makefile only links a shared .so; reuse the .o files it already builds
+    # and archive them ourselves instead of patching their build - static, so no rpath
+    # dance is needed at all (unlike the old vendored libpcanbasic.so).
     file(GLOB_RECURSE PCANBASIC_SOURCES ${PCANBASIC_SRC_DIR}/src/*.c ${PCANBASIC_SRC_DIR}/src/*.h)
     add_custom_command(
             OUTPUT ${PCANBASIC_LIB}
             COMMAND make -C ${PCANBASIC_SRC_DIR}
                     PCANFD_HEADER=${PCANBASIC_SRC_DIR}/src/pcan/driver/pcanxl.h
                     all
+            COMMAND sh -c "ar rcs ${PCANBASIC_LIB} ${PCANBASIC_OUT_DIR}/*.o"
             DEPENDS ${PCANBASIC_SOURCES}
-            COMMENT "Building libpcanbasic from source for the host architecture"
+            COMMENT "Building libpcanbasic from source (static)"
             VERBATIM
     )
     add_custom_target(pcanbasic_build DEPENDS ${PCANBASIC_LIB})
 
-    set(RCAN_THIRDPARTY ${RCAN_THIRDPARTY} ${PCANBASIC_SRC_DIR}/include ${PCANBASIC_SRC_DIR}/src/pcan/driver)
-    set(PCBUSB_LIBRARIES pcanbasic)
-    set(RCAN_LIBRARIES ${PCBUSB_LIBRARIES})
-    set(RCAN_LIBRARIES ${RCAN_LIBRARIES} socketcan rnode)
-    add_subdirectory(rnode)
+    # libsocketcan isn't a CMake project (autotools), so FetchContent only fetches its
+    # source; built as a static lib so there's no .so to find at runtime (no rpath needed,
+    # unlike libpcanbasic above).
+    if (NOT TARGET libsocketcan_build)
+        include(FetchContent)
+        FetchContent_Declare(
+                libsocketcan
+                GIT_REPOSITORY https://github.com/linux-can/libsocketcan.git
+                GIT_TAG v0.0.12
+        )
+        FetchContent_MakeAvailable(libsocketcan)
+    endif ()
+
+    set(LIBSOCKETCAN_LIB ${libsocketcan_SOURCE_DIR}/src/.libs/libsocketcan.a)
+    file(GLOB_RECURSE LIBSOCKETCAN_SOURCES ${libsocketcan_SOURCE_DIR}/src/*.c ${libsocketcan_SOURCE_DIR}/include/*.h)
+    add_custom_command(
+            OUTPUT ${LIBSOCKETCAN_LIB}
+            COMMAND sh -c "./autogen.sh && ./configure --disable-shared --enable-static && make"
+            WORKING_DIRECTORY ${libsocketcan_SOURCE_DIR}
+            DEPENDS ${LIBSOCKETCAN_SOURCES}
+            COMMENT "Building libsocketcan from source (static)"
+            VERBATIM
+    )
+    add_custom_target(libsocketcan_build DEPENDS ${LIBSOCKETCAN_LIB})
+
+    set(RCAN_THIRDPARTY ${PCANBASIC_SRC_DIR}/include ${PCANBASIC_SRC_DIR}/src/pcan/driver
+            ${libsocketcan_SOURCE_DIR}/include)
+    set(RCAN_LIBRARIES ${PCANBASIC_LIB} ${LIBSOCKETCAN_LIB} rnode)
 endif ()
 
 add_library(${PROJECT_NAME} STATIC ${RCAN_SOURCES})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${RCAN_LIBRARIES})
-
-if (UNIX AND NOT APPLE)
-    add_dependencies(${PROJECT_NAME} pcanbasic_build)
-    # PUBLIC so link_directories/rpath propagate transitively to any
-    # executable that links rcan, not just targets defined in this directory
-    # (link_directories() alone is scoped to this CMakeLists.txt).
-    target_link_directories(${PROJECT_NAME} PUBLIC ${PCANBASIC_LIB_DIR})
-    # Bake the freshly built library's location into consumers' rpath so the
-    # test/sim binaries can find it at runtime without a system install.
-    target_link_options(${PROJECT_NAME} PUBLIC "LINKER:-rpath,${PCANBASIC_LIB_DIR}")
-endif ()
 target_include_directories(${PROJECT_NAME}
         PUBLIC
         ./
         can/
         ${RCAN_THIRDPARTY})
 
-if (MSVC OR MSYS OR MINGW)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC -DRCAN_WINDOWS)
+if (UNIX AND NOT APPLE)
+    # Both PCAN libs are static archives now, so there's no .so to find at runtime -
+    # no target_link_directories/rpath needed, just make sure they're built first.
+    add_dependencies(${PROJECT_NAME} pcanbasic_build libsocketcan_build)
 endif ()
 
 if (APPLE)
@@ -115,7 +148,6 @@ endif ()
 if (UNIX AND NOT APPLE)
     target_compile_definitions(${PROJECT_NAME} PUBLIC -DRCAN_UNIX)
 endif ()
-
 
 #################### TEST SECTION #######################
 set(TEST_SRC_FILES
@@ -131,49 +163,98 @@ set(TEST_HEADER_FILES
         test/virtual_can.h
         test/test.h)
 
-if (TEST_TARGET STREQUAL "virtual_can")
-    message("Compile test for virtual_can")
-    add_definitions(-DRCAN_UNIX_TEST_UNIX_VIRTUAL_CAN=1)
-elseif (TEST_TARGET STREQUAL "virtual_bus")
-    message("Compile test for virtual_bus")
-    add_definitions(-DRCAN_VIRTUAL_BUS_TEST)
-elseif (TEST_TARGET STREQUAL "hardware_macos")
-    message("Compile test for hardware_macos")
-    add_definitions(-DRCAN_HARDWARE_MACOS_TEST=1)
-elseif (TEST_TARGET STREQUAL "hardware_unix")
-    message("Compile test for hardware_unix")
-    add_definitions(-DRCAN_HARDWARE_UNIX_TEST=1)
-endif ()
-
-# Test runner executable testing the static library
+# Every variant whose body can actually compile on this host is built into one binary;
+# which one runs is picked at runtime via argv (see test/test.c) rather than at configure
+# time, so `ctest -N` can list each variant by name instead of hiding behind -DTEST_TARGET=....
+# virtual_can/hardware_unix need Linux-only PEAK/SocketCAN headers (pulled in transitively
+# only under RCAN_UNIX), hardware_macos needs the macOS PCAN driver headers (RCAN_MACOS) -
+# each is only compiled in on the host that actually provides those headers.
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Generic)
-    add_executable(${PROJECT_NAME}_test
-            ${TEST_FRAMEWORK_SRC}
-            ${TEST_SRC_FILES})
-    target_include_directories(${PROJECT_NAME}_test
-            PUBLIC ./
-            PRIVATE can/
-            PRIVATE test/
-            PRIVATE test/runit/
-            PRIVATE ${RCAN_THIRDPARTY})
+    if (NOT TARGET runit)
+        include(FetchContent)
+        FetchContent_Declare(
+                runit
+                GIT_REPOSITORY https://github.com/RoboticsHardwareSolutions/runit.git
+                GIT_TAG main
+        )
+        FetchContent_MakeAvailable(runit)
+    endif ()
 
-    target_link_libraries(${PROJECT_NAME}_test
-            PUBLIC rcan
-            PUBLIC ${RCAN_LIBRARIES} runit)
+    add_executable(${PROJECT_NAME}_test ${TEST_SRC_FILES})
+    target_include_directories(${PROJECT_NAME}_test PRIVATE test/)
+    target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME} runit)
+    target_compile_definitions(${PROJECT_NAME}_test PRIVATE RCAN_VIRTUAL_BUS_TEST)
+
+    if (UNIX AND NOT APPLE)
+        target_compile_definitions(${PROJECT_NAME}_test PRIVATE
+                RCAN_UNIX_TEST_UNIX_VIRTUAL_CAN
+                RCAN_HARDWARE_UNIX_TEST)
+    endif ()
+
+    if (APPLE)
+        target_compile_definitions(${PROJECT_NAME}_test PRIVATE RCAN_HARDWARE_MACOS_TEST)
+    endif ()
+
+    if (UNIX AND NOT APPLE)
+        # virtual_can/hardware_unix call libsocketcan (can_do_start/can_do_stop/...), which
+        # talks to the kernel over netlink directly - that needs CAP_NET_ADMIN on the process
+        # itself, not just "some earlier command happened to run under sudo". Grant it via a
+        # file capability so the test binary runs unprivileged otherwise, instead of needing
+        # the whole test run wrapped in `sudo`.
+        add_custom_command(TARGET ${PROJECT_NAME}_test POST_BUILD
+                COMMAND sudo setcap cap_net_admin+ep $<TARGET_FILE:${PROJECT_NAME}_test>
+                COMMENT "Granting rcan_test CAP_NET_ADMIN for SocketCAN netlink calls")
+    endif ()
 
     enable_testing()
-    add_test(NAME ${PROJECT_NAME}_test COMMAND ./testrcan)
-    add_test(NAME ${PROJECT_NAME}_testshared COMMAND ./testrcanshared)
+    add_test(NAME ${PROJECT_NAME}_virtual_bus COMMAND ${PROJECT_NAME}_test virtual_bus)
+    add_test(NAME ${PROJECT_NAME}_virtual_can COMMAND ${PROJECT_NAME}_test virtual_can)
+    add_test(NAME ${PROJECT_NAME}_hardware_unix COMMAND ${PROJECT_NAME}_test hardware_unix)
+    add_test(NAME ${PROJECT_NAME}_hardware_macos COMMAND ${PROJECT_NAME}_test hardware_macos)
+    # virtual_bus is pure host-side (rnode) and needs nothing special; the other three need
+    # either root (Linux SocketCAN vcan) or real PCAN hardware, so exclude them from a plain
+    # `ctest` run with `ctest -LE "root|hardware"`.
+    set_tests_properties(${PROJECT_NAME}_virtual_can PROPERTIES LABELS root)
+    set_tests_properties(${PROJECT_NAME}_hardware_unix ${PROJECT_NAME}_hardware_macos PROPERTIES LABELS hardware)
+
+    if (UNIX AND NOT APPLE)
+        # Bridges vcan0<->vcan1 via the Linux CAN_GW kernel gateway (cangw, from can-utils)
+        # before rcan_virtual_can runs, and tears it down after - same FIXTURES_SETUP /
+        # FIXTURES_CLEANUP / FIXTURES_REQUIRED pattern rserial uses for its socat ptys.
+        add_test(NAME ${PROJECT_NAME}_can_gateway_start COMMAND ${CMAKE_CURRENT_LIST_DIR}/test/canfortests.sh start)
+        add_test(NAME ${PROJECT_NAME}_can_gateway_stop COMMAND ${CMAKE_CURRENT_LIST_DIR}/test/canfortests.sh stop)
+        set_tests_properties(${PROJECT_NAME}_can_gateway_start PROPERTIES FIXTURES_SETUP can_gateway)
+        set_tests_properties(${PROJECT_NAME}_can_gateway_stop PROPERTIES FIXTURES_CLEANUP can_gateway)
+        set_tests_properties(${PROJECT_NAME}_virtual_can PROPERTIES FIXTURES_REQUIRED can_gateway)
+    endif ()
 endif ()
 
+#################### EXAMPLES SECTION #######################
+add_subdirectory(examples)
 
 #################### FORMAT SECTION #######################
-
 set(FILES_FOR_FORMATTING
         ${TEST_SRC_FILES}
         ${TEST_HEADER_FILES}
         ${RCAN_SOURCES}
         ${RCAN_HEADER}
+        examples/pcan_echo/main.c
+        examples/virtual_bus/main.c
 )
 
-include(rcmake_macros/clang.cmake)
+if (NOT TARGET rlibhelper)
+    include(FetchContent)
+    FetchContent_Declare(
+            rlibhelper
+            GIT_REPOSITORY https://github.com/RoboticsHardwareSolutions/rlibhelper.git
+            GIT_TAG main
+    )
+    FetchContent_MakeAvailable(rlibhelper)
+endif ()
+
+if (EXISTS "${rlibhelper_SOURCE_DIR}/format.cmake")
+    include(${rlibhelper_SOURCE_DIR}/format.cmake)
+else ()
+    message(WARNING "format.cmake file not found")
+endif ()
+format_files(${PROJECT_NAME} SOURCES ${FILES_FOR_FORMATTING})

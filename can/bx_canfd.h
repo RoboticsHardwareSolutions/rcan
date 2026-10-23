@@ -1,6 +1,8 @@
 #pragma once
 
-#if defined(STM32G474xx) || defined(STM32G0B1xx)
+#include "rcan_backend.h"
+
+#if defined(RCAN_BACKEND_BXCANFD)
 
 #    include "stdbool.h"
 #    include "rcan_def.h"
@@ -73,4 +75,4 @@ bool bx_canfd_send(rcan* can, rcan_frame* frame);
 
 bool bx_canfd_receive(rcan* can, rcan_frame* frame);
 
-#endif  // defined(STM32G474xx) || defined(STM32G0B1xx)
+#endif  // defined(RCAN_BACKEND_BXCANFD)

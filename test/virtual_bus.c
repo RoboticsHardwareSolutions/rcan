@@ -1,4 +1,4 @@
-#include "../runit/src/runit.h"
+#include "runit.h"
 #include "rcan.h"
 
 #if defined(RCAN_VIRTUAL_BUS_TEST)

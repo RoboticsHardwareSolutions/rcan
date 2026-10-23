@@ -1,7 +1,8 @@
 #pragma once
 
-#if defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) || \
-    defined(STM32F103xB) || defined(STM32F407xx) || defined(STM32F429xx) || defined(STM32F103xE)
+#include "rcan_backend.h"
+
+#if defined(RCAN_BACKEND_BXCAN)
 
 #    include "stdbool.h"
 #    include "rcan_def.h"
@@ -75,5 +76,4 @@ bool bx_can_send(rcan* can, rcan_frame* frame);
 
 bool bx_can_receive(rcan* can, rcan_frame* frame);
 
-#endif  // defined(STM32F767xx) || defined(STM32F765xx) || defined(STM32F072xB) || defined(STM32F091xC) ||
-        // defined(STM32F103xB)
+#endif  // defined(RCAN_BACKEND_BXCAN)

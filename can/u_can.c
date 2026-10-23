@@ -1,5 +1,6 @@
+#include "rcan_backend.h"
 
-#if defined(RCAN_WINDOWS) || defined(RCAN_MACOS) || defined(RCAN_UNIX)
+#if defined(RCAN_BACKEND_HOST)
 
 #    include "u_can.h"
 #    include "stdio.h"
@@ -27,8 +28,6 @@ static bool is_vcan_iface(uint32_t channel);
 
 static bool is_virtual_can_iface(uint32_t channel);
 
-static int virtual_can_bind(rcan* can, uint32_t channel);
-
 static bool virtual_can_start(rcan* can, uint32_t channel, uint32_t bitrate);
 
 static bool virtual_can_read(rcan* can, rcan_frame* frame);
@@ -36,8 +35,6 @@ static bool virtual_can_read(rcan* can, rcan_frame* frame);
 static bool virtual_can_write(rcan* can, rcan_frame* frame);
 
 static bool virtual_can_stop(rcan* can);
-
-static bool is_correct_bitrate_for_peak_can(uint32_t bitrate);
 
 static bool peak_can_start(rcan* can, uint32_t channel, uint32_t bitrate);
 
@@ -82,7 +79,7 @@ bool u_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
         return true;
     }
 
-#    if defined(RCAN_WINDOWS) || defined(RCAN_MACOS)
+#    if defined(RCAN_MACOS)
 
     uint32_t pcan_bitrate = convert_to_peak_can_bitrate(bitrate);
 
@@ -91,7 +88,7 @@ bool u_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
 
     opened = peak_can_start(can, channel, pcan_bitrate);
 
-#    endif  // defined(RCAN_WINDOWS) || defined (RCAN_MACOS)
+#    endif  // defined(RCAN_MACOS)
 
 #    if defined(RCAN_UNIX)
     socket = is_socket_can_iface(channel);
@@ -144,7 +141,7 @@ bool u_can_is_ok(rcan* can)
 
 #    endif
 
-#    if defined(RCAN_WINDOWS) || defined(RCAN_MACOS)
+#    if defined(RCAN_MACOS)
 
     return CAN_GetValue((unsigned short) can->channel, PCAN_RECEIVE_EVENT, &can->fd, sizeof(int)) == PCAN_ERROR_OK;
 
@@ -165,7 +162,7 @@ bool u_can_stop(rcan* can)
         return true;
     }
 
-#    if defined(RCAN_WINDOWS) || defined(RCAN_MACOS)
+#    if defined(RCAN_MACOS)
 
     CAN_Uninitialize((unsigned short) can->channel);
 
@@ -201,7 +198,7 @@ bool u_can_send(rcan* can, rcan_frame* frame)
         return virtual_can_write(can, frame);
     }
 
-#    if defined(RCAN_WINDOWS) || defined(RCAN_MACOS)
+#    if defined(RCAN_MACOS)
 
     return peak_can_write(can, frame);
 
@@ -229,7 +226,7 @@ bool u_can_receive(rcan* can, rcan_frame* frame)
         return virtual_can_read(can, frame);
     }
 
-#    if defined(RCAN_WINDOWS) || defined(RCAN_MACOS)
+#    if defined(RCAN_MACOS)
 
     return peak_can_read(can, frame);
 
@@ -255,19 +252,6 @@ static bool is_peak_can_iface(uint32_t channel)
     {
         return true;
     }
-    return false;
-}
-
-static bool is_correct_bitrate_for_peak_can(uint32_t bitrate)
-{
-    if (bitrate == PCAN_BAUD_1M || bitrate == PCAN_BAUD_800K || bitrate == PCAN_BAUD_500K ||
-        bitrate == PCAN_BAUD_250K || bitrate == PCAN_BAUD_125K || bitrate == PCAN_BAUD_100K ||
-        bitrate == PCAN_BAUD_95K || bitrate == PCAN_BAUD_83K || bitrate == PCAN_BAUD_50K || bitrate == PCAN_BAUD_47K ||
-        bitrate == PCAN_BAUD_33K || bitrate == PCAN_BAUD_20K || bitrate == PCAN_BAUD_10K || bitrate == PCAN_BAUD_5K)
-    {
-        return true;
-    }
-
     return false;
 }
 
@@ -436,7 +420,10 @@ static bool virtual_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
     char url[30];
     int  bus = is_ipc(channel) ? (channel - VIRTUAL_IPC_CAN_BUS0) : (channel - VIRTUAL_INPROC_CAN_BUS0);
 
-    sprintf(url, "%sbus%dnode", is_ipc(channel) ? URL_CAN_INTER_PROC : URL_CAN_INPROC, bus);
+    int written = snprintf(url, sizeof(url), "%sbus%dnode", is_ipc(channel) ? URL_CAN_INTER_PROC : URL_CAN_INPROC, bus);
+    if (written < 0 || (size_t) written >= sizeof(url))
+        return false;
+
     return rnode_create(&can->node, url);
 }
 
@@ -475,19 +462,19 @@ static bool is_vcan_iface(uint32_t channel)
 
 #    if defined(RCAN_UNIX)
 
-static void create_vcan(const char* name)
+static bool create_vcan(const char* name)
 {
-    char  cli_enter[50];
-    char* add    = "add";
-    char* delete = "delete";
+    char cli_enter[64];
 
-    memset(cli_enter, '\0', sizeof(cli_enter));
-    sprintf(cli_enter, "sudo ip link %s dev %s", delete, name);
-    system(cli_enter);
+    // Only create the interface if it doesn't exist yet: unconditionally deleting and
+    // re-adding it on every rcan_start() would assign it a new ifindex each time, which
+    // silently breaks any `cangw`/tc rule a test fixture bound to the previous one.
+    snprintf(cli_enter, sizeof(cli_enter), "ip link show dev %s > /dev/null 2>&1", name);
+    if (system(cli_enter) == 0)
+        return true;
 
-    memset(cli_enter, '\0', sizeof(cli_enter));
-    sprintf(cli_enter, "sudo ip link %s dev %s type vcan", add, name);
-    system(cli_enter);
+    snprintf(cli_enter, sizeof(cli_enter), "sudo ip link add dev %s type vcan", name);
+    return system(cli_enter) == 0;
 }
 
 static bool translate_socket_can_name(uint32_t channel, struct ifreq* ifr)
@@ -532,8 +519,8 @@ static bool socket_can_start(rcan* can, uint32_t channel, uint32_t bitrate)
     //    if (can_get_device_stats(ifr.ifr_ifrn.ifrn_name, &can_status) != 0)
     //        printf("get device state error\r\n");
 
-    if (is_vcan_iface(channel))
-        create_vcan(ifr.ifr_ifrn.ifrn_name);
+    if (is_vcan_iface(channel) && !create_vcan(ifr.ifr_ifrn.ifrn_name))
+        return false;
 
     if (can_do_stop(ifr.ifr_ifrn.ifrn_name) != 0)
         return false;
@@ -633,4 +620,4 @@ static bool socet_can_write(rcan* can, rcan_frame* frame)
 
 #    endif  // defined(RCAN_UNIX)
 
-#endif  // endif for defined(RCAN_WINDOWS) || defined (RCAN_MACOS) || defined (RCAN_UNIX)
+#endif  // defined(RCAN_BACKEND_HOST)

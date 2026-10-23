@@ -47,17 +47,25 @@ typedef struct
 {
     struct
     {
-        uint32_t id;
-        uint32_t mask;
-    } mask_filter;
+        uint32_t id;    // bits common to every ID in the accepted set
+        uint32_t mask;  // bits that vary across the accepted set ("don't care" bits)
+    } mask_filter;      // the only one the current backends (bx_can, bx_canfd) actually program
 
     struct
     {
         uint32_t from_id;
         uint32_t to_id;
-    } from_to_filter;
+    } from_to_filter;  // computed but not wired into any backend yet
 
-    bool is_extended;
+    bool is_extended;  // true if any ID in the accepted set needs 29-bit addressing
 } rcan_filter;
 
+/**
+ * @brief Compute a hardware acceptance filter (ID+mask) covering every ID in source_sequence.
+ * Used internally by rcan_filter_preconfiguration() - not normally called directly.
+ * @param source_sequence array of CAN IDs the filter must accept.
+ * @param size number of entries in source_sequence (must be > 0).
+ * @param filter filled in on success.
+ * @return false if any argument is NULL or size is 0.
+ */
 bool rcan_filter_calculate(uint32_t* source_sequence, uint32_t size, rcan_filter* filter);
