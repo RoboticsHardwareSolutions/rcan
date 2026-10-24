@@ -3,15 +3,15 @@
 #include "rcan.h"
 #include "virtual_bus.h"
 #include "virtual_can.h"
-#include "hardware_unix.h"
-#include "hardware_macos.h"
+#include "hardware_two_pcan.h"
+#include "hardware_linux_pcan_driver.h"
 #include <string.h>
 
 int main(int argc, char* argv[])
 {
     if (argc < 2)
     {
-        printf("usage: %s <virtual_bus|virtual_can|hardware_unix|hardware_macos>\n", argv[0]);
+        printf("usage: %s <virtual_bus|virtual_can|hardware_two_pcan|hardware_linux_pcan_driver>\n", argv[0]);
         return 1;
     }
 
@@ -28,16 +28,16 @@ int main(int argc, char* argv[])
         test_virtual_can();
     }
 #endif
-#if defined(RCAN_HARDWARE_UNIX_TEST)
-    else if (strcmp(argv[1], "hardware_unix") == 0)
+#if defined(RCAN_HARDWARE_TWO_PCAN_TEST)
+    else if (strcmp(argv[1], "hardware_two_pcan") == 0)
     {
-        test_hardware_unix();
+        test_hardware_two_pcan();
     }
 #endif
-#if defined(RCAN_HARDWARE_MACOS_TEST)
-    else if (strcmp(argv[1], "hardware_macos") == 0)
+#if defined(RCAN_HARDWARE_LINUX_PCAN_DRIVER_TEST)
+    else if (strcmp(argv[1], "hardware_linux_pcan_driver") == 0)
     {
-        test_hardware_macos();
+        test_hardware_linux_pcan_driver();
     }
 #endif
     else

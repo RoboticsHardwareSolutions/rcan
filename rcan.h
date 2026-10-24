@@ -93,8 +93,24 @@ bool rcan_send(rcan* can, rcan_frame* frame);
 
 /**
  * @brief Poll for one received CAN frame (non-blocking). Call this in a loop.
+ *
+ * On the host backend (PCAN on macOS/Linux, SocketCAN on Linux), this can also return a bus
+ * error/status event instead of a CAN message - rcan_start() enables error-frame reporting by
+ * default. Such an event has frame->type == error_frame and does NOT represent real CAN traffic;
+ * the fields are repurposed as follows (all other fields are 0/unused):
+ *
+ *   id        - raw backend status/error-class code (PCAN_ERROR_* bitmask, or masked SocketCAN
+ *               can_id error class) - for diagnostics/logging, not meant to be decoded by hand.
+ *   len       - always 5.
+ *   payload[0] - rcan_bus_error_type (see rcan_def.h): coarse, backend-independent classification.
+ *   payload[1] - direction: 0 = error occurred on transmit, 1 = on receive, 0xFF = unknown.
+ *   payload[2] - current RX error counter (0-255).
+ *   payload[3] - current TX error counter (0-255).
+ *   payload[4] - raw backend-specific detail byte (meaning depends on payload[0]/backend;
+ *                for diagnostics only).
+ *
  * @param frame filled in on success; left untouched if no frame was available.
- * @return true if a frame was received into *frame.
+ * @return true if a frame or error event was received into *frame.
  */
 bool rcan_receive(rcan* can, rcan_frame* frame);
 

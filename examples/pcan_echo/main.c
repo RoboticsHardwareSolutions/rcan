@@ -28,7 +28,7 @@ int main(void)
     }
 
     rcan can = {0};
-    if (!rcan_start(&can, PEAK_CAN_USBBUS1, PCAN_BAUD_1M))
+    if (!rcan_start(&can, PEAK_CAN_USBBUS1, 1000000))
     {
         fprintf(stderr, "failed to start PCAN-USB channel 1\n");
         return 1;

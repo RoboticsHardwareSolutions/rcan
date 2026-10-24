@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 project(rcan
-        VERSION 0.2.0
+        VERSION 1.0.1
         LANGUAGES C
         DESCRIPTION
         "cross platform lib with simple C API for work with CAN BUS")
@@ -124,7 +124,9 @@ if (UNIX AND NOT APPLE)
 
     set(RCAN_THIRDPARTY ${PCANBASIC_SRC_DIR}/include ${PCANBASIC_SRC_DIR}/src/pcan/driver
             ${libsocketcan_SOURCE_DIR}/include)
-    set(RCAN_LIBRARIES ${PCANBASIC_LIB} ${LIBSOCKETCAN_LIB} rnode)
+    # libpcanbasic's pcaninfo.c calls truncf() (math.h) - needs an explicit libm on toolchains
+    # that don't implicitly pull it in via libc.
+    set(RCAN_LIBRARIES ${PCANBASIC_LIB} ${LIBSOCKETCAN_LIB} rnode m)
 endif ()
 
 add_library(${PROJECT_NAME} STATIC ${RCAN_SOURCES})
@@ -151,14 +153,15 @@ endif ()
 
 #################### TEST SECTION #######################
 set(TEST_SRC_FILES
-        test/hardware_unix.c
-        test/hardware_macos.c
+        test/hardware_two_pcan.c
+        test/hardware_linux_pcan_driver.c
         test/virtual_bus.c
         test/virtual_can.c
         test/test.c)
 
 set(TEST_HEADER_FILES
-        test/hardware_unix.h
+        test/hardware_two_pcan.h
+        test/hardware_linux_pcan_driver.h
         test/virtual_bus.h
         test/virtual_can.h
         test/test.h)
@@ -166,9 +169,15 @@ set(TEST_HEADER_FILES
 # Every variant whose body can actually compile on this host is built into one binary;
 # which one runs is picked at runtime via argv (see test/test.c) rather than at configure
 # time, so `ctest -N` can list each variant by name instead of hiding behind -DTEST_TARGET=....
-# virtual_can/hardware_unix need Linux-only PEAK/SocketCAN headers (pulled in transitively
-# only under RCAN_UNIX), hardware_macos needs the macOS PCAN driver headers (RCAN_MACOS) -
-# each is only compiled in on the host that actually provides those headers.
+# virtual_can needs Linux-only SocketCAN headers (pulled in transitively only under RCAN_UNIX).
+# hardware_two_pcan needs the two real PCAN-USB (FD) adapters this project assumes - it picks
+# its channel macros (PEAK_CAN_USBBUS1/2 vs SOCKET_CAN0/1) from RCAN_MACOS/RCAN_UNIX itself
+# (see test/hardware_two_pcan.c), so the same file/flag covers both host platforms.
+# hardware_linux_pcan_driver is Linux-only: same two adapters, reached through PEAK's own
+# proprietary chardev driver (PEAK_CAN_USBBUS1/2 via libpcanbasic) instead of mainline
+# peak_usb/SocketCAN - see README.md, "Switching Linux CAN drivers". Both it and
+# hardware_two_pcan share their actual test bodies via test/hardware_pcan_scenarios.inc
+# (textually #include'd, not compiled standalone - deliberately not listed in TEST_SRC_FILES).
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Generic)
     if (NOT TARGET runit)
         include(FetchContent)
@@ -188,11 +197,12 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Generic)
     if (UNIX AND NOT APPLE)
         target_compile_definitions(${PROJECT_NAME}_test PRIVATE
                 RCAN_UNIX_TEST_UNIX_VIRTUAL_CAN
-                RCAN_HARDWARE_UNIX_TEST)
+                RCAN_HARDWARE_TWO_PCAN_TEST
+                RCAN_HARDWARE_LINUX_PCAN_DRIVER_TEST)
     endif ()
 
     if (APPLE)
-        target_compile_definitions(${PROJECT_NAME}_test PRIVATE RCAN_HARDWARE_MACOS_TEST)
+        target_compile_definitions(${PROJECT_NAME}_test PRIVATE RCAN_HARDWARE_TWO_PCAN_TEST)
     endif ()
 
     if (UNIX AND NOT APPLE)
@@ -209,13 +219,20 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Generic)
     enable_testing()
     add_test(NAME ${PROJECT_NAME}_virtual_bus COMMAND ${PROJECT_NAME}_test virtual_bus)
     add_test(NAME ${PROJECT_NAME}_virtual_can COMMAND ${PROJECT_NAME}_test virtual_can)
-    add_test(NAME ${PROJECT_NAME}_hardware_unix COMMAND ${PROJECT_NAME}_test hardware_unix)
-    add_test(NAME ${PROJECT_NAME}_hardware_macos COMMAND ${PROJECT_NAME}_test hardware_macos)
-    # virtual_bus is pure host-side (rnode) and needs nothing special; the other three need
-    # either root (Linux SocketCAN vcan) or real PCAN hardware, so exclude them from a plain
+    add_test(NAME ${PROJECT_NAME}_hardware_two_pcan COMMAND ${PROJECT_NAME}_test hardware_two_pcan)
+    add_test(NAME ${PROJECT_NAME}_hardware_linux_pcan_driver COMMAND ${PROJECT_NAME}_test hardware_linux_pcan_driver)
+    # virtual_bus is pure host-side (rnode) and needs nothing special; the rest need either root
+    # (Linux SocketCAN vcan) or the two real PCAN-USB adapters, so exclude them from a plain
     # `ctest` run with `ctest -LE "root|hardware"`.
     set_tests_properties(${PROJECT_NAME}_virtual_can PROPERTIES LABELS root)
-    set_tests_properties(${PROJECT_NAME}_hardware_unix ${PROJECT_NAME}_hardware_macos PROPERTIES LABELS hardware)
+    set_tests_properties(${PROJECT_NAME}_hardware_two_pcan ${PROJECT_NAME}_hardware_linux_pcan_driver
+            PROPERTIES LABELS hardware)
+    # Every receive wait in test/hardware_pcan_scenarios.inc is itself bounded
+    # (RCAN_TEST_RECEIVE_TIMEOUT_SEC), so a missing/unwired adapter fails fast instead of hanging -
+    # this is just a safety net in case that assumption is ever violated (e.g. a future test adds
+    # an unbounded wait).
+    set_tests_properties(${PROJECT_NAME}_hardware_two_pcan ${PROJECT_NAME}_hardware_linux_pcan_driver
+            PROPERTIES TIMEOUT 90)
 
     if (UNIX AND NOT APPLE)
         # Bridges vcan0<->vcan1 via the Linux CAN_GW kernel gateway (cangw, from can-utils)
@@ -240,6 +257,7 @@ set(FILES_FOR_FORMATTING
         ${RCAN_HEADER}
         examples/pcan_echo/main.c
         examples/virtual_bus/main.c
+        test/hardware_pcan_scenarios.inc
 )
 
 if (NOT TARGET rlibhelper)

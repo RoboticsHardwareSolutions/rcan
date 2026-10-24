@@ -9,10 +9,30 @@
 
 typedef enum
 {
-    nonframe,  // not a valid frame; rcan_send() rejects it
-    std_id,    // 11-bit standard CAN ID
-    ext_id     // 29-bit extended CAN ID
+    nonframe,    // not a valid frame; rcan_send() rejects it
+    std_id,      // 11-bit standard CAN ID
+    ext_id,      // 29-bit extended CAN ID
+    error_frame  // bus error/status event, not a CAN message; see rcan_receive() docs in rcan.h
 } rcan_frame_type;
+
+// Classification of a bus error/status event delivered as an rcan_frame with type ==
+// error_frame (see rcan_receive() docs in rcan.h for the full payload layout).
+typedef enum
+{
+    rcan_err_unspecified,
+    rcan_err_bit,         // single-bit error
+    rcan_err_form,        // frame format error
+    rcan_err_stuff,       // bit-stuffing error
+    rcan_err_controller,  // RX/TX overflow, warning/passive level change
+    rcan_err_busoff,
+    rcan_err_transceiver,
+    rcan_err_ack,  // no ACK received on transmission
+    rcan_err_arbitration_lost
+} rcan_bus_error_type;
+
+// Sentinel for error_frame payload[1]/[2]/[3] (direction/RX counter/TX counter): "not provided by
+// this backend" - see rcan_receive() docs in rcan.h.
+#define RCAN_ERR_FIELD_UNDEF 0xFFU
 
 #pragma pack(push)
 #pragma pack(1)
@@ -74,6 +94,7 @@ typedef struct
 #        include <fcntl.h>
 #        include <libsocketcan.h>
 #        include <linux/can.h>
+#        include <linux/can/error.h>
 #        include <linux/can/raw.h>
 #        include <net/if.h>
 #        include <sys/ioctl.h>
