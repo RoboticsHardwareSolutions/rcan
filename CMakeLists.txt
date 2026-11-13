@@ -71,8 +71,8 @@ if (UNIX AND NOT APPLE)
         include(FetchContent)
         FetchContent_Declare(
                 pcanbasic
-                URL "https://www.peak-system.com/produktcd/Develop/PC%20interfaces/Linux/PCAN-Basic_API_for_Linux/PCAN-Basic_Linux-5.0.1.8.tar.gz"
-                URL_HASH SHA256=a7e3b50945201c28e7075d344cd85a877725d9e22945d180d1fbc3ed8fc984f4
+                URL "https://www.peak-system.com/produktcd/Develop/PC%20interfaces/Linux/PCAN-Basic_API_for_Linux/PCAN-Basic_Linux-5.0.2.14.tar.gz
+                URL_HASH SHA256=7648cf1fe74b80253228a2272670fb401f19c46b016b2de9ae9b54b1abc35aa5
         )
         FetchContent_MakeAvailable(pcanbasic)
     endif ()
